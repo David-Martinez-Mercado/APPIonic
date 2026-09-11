@@ -1,17 +1,126 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>
-      Tab 3
-    </ion-title>
+    <ion-title>Usuarios</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
   <ion-header collapse="condense">
     <ion-toolbar>
-      <ion-title size="large">Tab 3</ion-title>
+      <ion-title size="large">Usuarios</ion-title>
     </ion-toolbar>
   </ion-header>
 
-  <app-explore-container name="Tab 3 page"></app-explore-container>
+  <div class="contenedor">
+    <h1 class="logo"><span class="nombre-empresa">CRUD</span> Usuarios</h1>
+
+    <div class="wrapper">
+
+      <!-- ================= Panel izquierdo: lista ================= -->
+      <div class="info-empresa">
+        <h3>Registrados</h3>
+
+        @if (cargando() && !usuarios().length) {
+          <p class="vacio">Cargando...</p>
+        }
+
+        @if (!cargando() && !usuarios().length) {
+          <p class="vacio">No hay usuarios todavia.</p>
+        }
+
+        <ul class="servicios">
+          @for (u of usuarios(); track u.id) {
+            <li class="usuario" [class.seleccionado]="editandoId() === u.id">
+              <div class="datos">
+                <strong>{{ u.full_name }}</strong>
+                <span class="meta">&#64;{{ u.username }}</span>
+                <span class="meta">{{ u.email }}</span>
+                <span class="estado" [class.inactivo]="u.activo !== 1">
+                  {{ u.activo === 1 ? 'Activo' : 'Inactivo' }}
+                </span>
+              </div>
+
+              <div class="acciones">
+                <button type="button" class="mini" (click)="editar(u)">Editar</button>
+                <button type="button" class="mini" (click)="alternarActivo(u)">
+                  {{ u.activo === 1 ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button type="button" class="mini borrar" (click)="eliminar(u)">Borrar</button>
+              </div>
+            </li>
+          }
+        </ul>
+
+        <button type="button" class="mini recargar" (click)="cargar()" [disabled]="cargando()">
+          Recargar (GET)
+        </button>
+      </div>
+
+      <!-- ================= Panel derecho: formulario ================= -->
+      <div class="contacto">
+        <h3>
+          {{ editando() ? 'Editar usuario #' + editandoId() : 'Nuevo usuario' }}
+        </h3>
+
+        @if (mensajeError()) {
+          <p class="aviso error">{{ mensajeError() }}</p>
+        }
+        @if (mensajeOk()) {
+          <p class="aviso ok">{{ mensajeOk() }}</p>
+        }
+
+        <form class="formulario" (ngSubmit)="guardar()">
+          <p>
+            <label for="username">Usuario</label>
+            <input id="username" type="text" name="username" [(ngModel)]="form.username" required />
+          </p>
+          <p>
+            <label for="full_name">Nombre completo</label>
+            <input id="full_name" type="text" name="full_name" [(ngModel)]="form.full_name" required />
+          </p>
+          <p>
+            <label for="email">Correo</label>
+            <input id="email" type="email" name="email" [(ngModel)]="form.email" required />
+          </p>
+          <p>
+            <label for="password">
+              Contrase&ntilde;a
+              @if (editando()) {
+                <span class="pista">(vacio = no se cambia)</span>
+              }
+            </label>
+            <input id="password" type="password" name="password" [(ngModel)]="form.password" />
+          </p>
+
+          @if (editando()) {
+            <p>
+              <label for="activo">Estado</label>
+              <select id="activo" name="activo" [(ngModel)]="form.activo">
+                <option [ngValue]="1">Activo</option>
+                <option [ngValue]="0">Inactivo</option>
+              </select>
+            </p>
+            <p>
+              <label for="metodo">M&eacute;todo HTTP</label>
+              <select id="metodo" name="metodo" [ngModel]="metodoEdicion()" (ngModelChange)="metodoEdicion.set($event)">
+                <option value="PATCH">PATCH - solo lo que cambie</option>
+                <option value="PUT">PUT - reemplaza todo</option>
+              </select>
+            </p>
+          }
+
+          <p class="full acciones-form">
+            <button type="submit" class="boton-enviar" [disabled]="cargando()">
+              {{ cargando() ? 'Guardando...' : (editando() ? 'Guardar (' + metodoEdicion() + ')' : 'Crear (POST)') }}
+            </button>
+
+            @if (editando()) {
+              <button type="button" class="boton-enviar cancelar" (click)="cancelar()">Cancelar</button>
+            }
+          </p>
+        </form>
+      </div>
+
+    </div>
+  </div>
 </ion-content>

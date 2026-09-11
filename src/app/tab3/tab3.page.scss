@@ -1,0 +1,300 @@
+@use "sass:color";
+
+// Se usa color.adjust / color.scale en vez de lighten() y darken(),
+// que estan deprecados en Sass moderno y llenan la consola de avisos.
+$fuente-principal: 'Roboto', sans-serif;
+$color-principal: #455a64;
+$bk1: 700px;
+
+$claro-50: color.adjust($color-principal, $lightness: 50%);
+$claro-60: color.adjust($color-principal, $lightness: 60%);
+$oscuro-15: color.adjust($color-principal, $lightness: -15%);
+
+ion-content {
+  --background: #fff;
+  // Ionic inyecta --ion-text-color por variable CSS; hay que fijarla aqui
+  // o el texto hereda el color del tema (casi blanco en fondo claro).
+  --color: #{$color-principal};
+  font-family: $fuente-principal;
+  color: $color-principal;
+  line-height: 1.5;
+}
+
+// El tema de Ionic pinta encabezados y labels con su propio color,
+// asi que se fuerza el color heredado en todo el bloque del CRUD.
+.contenedor,
+.contenedor h1,
+.contenedor h3,
+.contenedor label,
+.contenedor strong,
+.contenedor li,
+.contenedor span:not(.estado):not(.nombre-empresa),
+.contenedor p:not(.aviso) {
+  color: $color-principal;
+}
+
+.contenedor {
+  max-width: 1170px;
+  margin: 0 auto 1rem;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 1.6rem;
+}
+
+.nombre-empresa {
+  color: $oscuro-15;
+}
+
+.wrapper {
+  box-shadow: 0 0 20px 0 rgba($color-principal, 0.7);
+  border-radius: 5px;
+  overflow: hidden;
+
+  @media screen and (min-width: $bk1) {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    align-items: stretch;
+  }
+}
+
+// ---------------- Panel izquierdo: lista ----------------
+.info-empresa {
+  padding: 1rem;
+  background-color: $claro-50;
+
+  h3 {
+    text-align: center;
+    margin-bottom: 0.5rem;
+
+    @media screen and (min-width: $bk1) {
+      text-align: left;
+    }
+  }
+}
+
+.servicios {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  text-align: center;
+
+  @media screen and (min-width: $bk1) {
+    text-align: left;
+  }
+}
+
+.usuario {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba($color-principal, 0.2);
+
+  &:last-of-type {
+    border-bottom: none;
+  }
+
+  &.seleccionado {
+    background-color: rgba(#fff, 0.55);
+    border-radius: 4px;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+.datos {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+
+  strong {
+    font-size: 0.95rem;
+  }
+}
+
+.meta {
+  font-size: 0.78rem;
+  opacity: 0.75;
+  word-break: break-all;
+}
+
+.estado {
+  align-self: center;
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #1b7f4b;
+
+  &.inactivo {
+    color: #b3261e;
+  }
+
+  @media screen and (min-width: $bk1) {
+    align-self: flex-start;
+  }
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: center;
+  margin-top: 0.45rem;
+
+  @media screen and (min-width: $bk1) {
+    justify-content: flex-start;
+  }
+}
+
+.mini {
+  background-color: #fff;
+  border: 1px solid rgba($color-principal, 0.35);
+  border-radius: 4px;
+  color: $color-principal;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.55rem;
+
+  &:hover:not(:disabled),
+  &:focus:not(:disabled) {
+    background-color: $color-principal;
+    color: #fff;
+    outline: 0;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  &.borrar:hover,
+  &.borrar:focus {
+    background-color: #b3261e;
+    border-color: #b3261e;
+  }
+}
+
+.recargar {
+  width: 100%;
+}
+
+.vacio {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+// ---------------- Panel derecho: formulario ----------------
+.contacto {
+  padding: 1rem;
+  background-color: $claro-60;
+
+  h3 {
+    margin-bottom: 1rem;
+  }
+}
+
+.formulario {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 1.25rem;
+
+  p {
+    margin: 0;
+  }
+
+  label {
+    display: block;
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+  }
+
+  button,
+  input,
+  select {
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid $claro-50;
+    border-radius: 4px;
+    font: inherit;
+    color: $color-principal;
+    background-color: #fff;
+    box-sizing: border-box;
+  }
+
+  // En pantallas chicas cada campo ocupa el ancho completo
+  @media screen and (max-width: #{$bk1 - 1px}) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pista {
+  font-weight: normal;
+  font-size: 0.72rem;
+  opacity: 0.7;
+}
+
+.full {
+  grid-column: 1 / 3;
+
+  @media screen and (max-width: #{$bk1 - 1px}) {
+    grid-column: 1 / 2;
+  }
+}
+
+.acciones-form {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.boton-enviar {
+  background-color: $claro-50;
+  border: none;
+  border-radius: 5px;
+  text-transform: uppercase;
+  font-weight: bold;
+  cursor: pointer;
+
+  &:focus,
+  &:hover {
+    background-color: $color-principal;
+    color: #fff;
+    outline: 0;
+    transition: background-color 2s ease-out;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  &.cancelar {
+    background-color: transparent;
+    border: 1px solid rgba($color-principal, 0.4);
+  }
+}
+
+// ---------------- Avisos ----------------
+.aviso {
+  border-radius: 4px;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  padding: 0.65rem 0.8rem;
+
+  &.error {
+    background-color: #fdecea;
+    border-left: 4px solid #b3261e;
+    color: #8c1d18;
+  }
+
+  &.ok {
+    background-color: #e6f4ea;
+    border-left: 4px solid #1b7f4b;
+    color: #10603a;
+  }
+}

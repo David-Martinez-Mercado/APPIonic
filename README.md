@@ -1,39 +1,254 @@
-# Build Your First Ionic App: Photo Gallery (Ionic Angular and Capacitor)
+# APPIonic — Aplicación base del cuatrimestre
 
-Get started with Ionic by building a photo gallery app that runs on iOS, Android, and the web - with just one codebase. This is the complete project referenced in the ["Your First App: Angular" guide](https://ionicframework.com/docs/angular/your-first-app). Follow along to create a complete CRUD (create-read-update-delete) experience.
+Aplicación móvil híbrida construida con **Ionic + Angular + Capacitor**, conectada a una
+**API REST en PHP** que corre sobre XAMPP con base de datos **MySQL**.
 
-Powered by [Ionic Angular](https://ionicframework.com/docs/angular/overview) (web app) and [Capacitor](https://capacitor.ionicframework.com) (native app runtime).
+Este es el proyecto base que se irá ampliando durante el cuatrimestre en la materia
+*Programación para Móviles II*.
 
-## How It Works
+---
 
-After the user navigates to Tab 2 (Photos), they can tap/click on the camera button to open up the device's camera. After taking or selecting a photo, it's stored permanently into the device's filesystem. When the user reopens the app at a later time, the photo images are loaded from the filesystem and displayed again in the gallery. The user can tap on a photo to be presented with the option to remove the photo.
+## Objetivo de la aplicación
 
-## Feature Overview
-* App framework: [Angular](https://angular.io)
-* UI components: [Ionic Framework](https://ionicframework.com/docs/components)
-  * Camera button: [Floating Action Button (FAB)](https://ionicframework.com/docs/api/fab)
-  * Photo Gallery display: [Grid](https://ionicframework.com/docs/api/grid)
-  * Delete Photo dialog: [Action Sheet](https://ionicframework.com/docs/api/action-sheet) 
-* Native runtime: [Capacitor](https://capacitor.ionicframework.com)
-  * Taking photos: [Camera API](https://capacitor.ionicframework.com/docs/apis/camera)
-  * Writing photo to the filesystem: [Filesystem API](https://capacitor.ionicframework.com/docs/apis/filesystem)
-  * Storing photo gallery metadata: [Preferences API](https://capacitor.ionicframework.com/docs/apis/preferences)
+Gestionar los usuarios de un sistema desde un dispositivo móvil.
 
-## Project Structure
-* Tab2 (Photos) (`src/app/tab2/`): Photo Gallery UI and basic logic.
-* PhotoService (`src/app/services/photo.service.ts`): Logic encapsulating Capacitor APIs, including Camera, Filesystem, and Preferences.
+La aplicación permite **registrar** una cuenta, **iniciar sesión** validando las
+credenciales contra un servidor real, y **administrar** el catálogo completo de
+usuarios (consultar, crear, actualizar y eliminar) consumiendo una API REST propia.
 
-## How to Run
+Incluye además un módulo de **galería de fotos** que usa la cámara del dispositivo
+a través de Capacitor, para demostrar el acceso a las capacidades nativas del teléfono.
 
-> [!TIP]
-> It's highly recommended to follow along with the [tutorial guide](https://ionicframework.com/docs/angular/your-first-app), which goes into more depth, but this is the fastest way to run the app.
+El objetivo académico es integrar en un solo proyecto los tres elementos que se verán
+durante el curso:
 
-> [!IMPORTANT]
-> Requires Node `^22.22.3 || ^24.15.0 || >=26.0.0` (Angular 22).
+1. Interfaz móvil con Ionic y componentes de Angular.
+2. Consumo de servicios web (HTTP con axios) contra un backend propio.
+3. Acceso a hardware del dispositivo mediante Capacitor.
 
-1) Install the Ionic CLI (if you haven't already): `npm install -g @ionic/cli`
-2) Clone the repository: `git clone https://github.com/ionic-team/tutorial-photo-gallery-angular`
-3) Navigate to the project directory: `cd tutorial-photo-gallery-angular`
-4) Install the project dependencies: `npm install`
-5) Run the app in your browser: `ionic serve`
-6) Run the app on iOS or Android: Follow the [Capacitor Workflow](https://capacitorjs.com/docs/basics/workflow) guide for instructions on building and running the app on a native platform.
+---
+
+## Vistas de la aplicación
+
+La aplicación tiene **tres vistas** organizadas en pestañas:
+
+| # | Vista | Ruta | Descripción |
+|---|-------|------|-------------|
+| 1 | **Acceso** | `/tabs/tab1` | Inicio de sesión y registro de usuarios. Panel animado que alterna entre ambos formularios. Valida contra la API y muestra los errores que devuelve el servidor. |
+| 2 | **Fotos** | `/tabs/tab2` | Galería que toma fotografías con la cámara del dispositivo y las almacena en el sistema de archivos usando Capacitor. |
+| 3 | **Usuarios** | `/tabs/tab3` | CRUD completo: lista todos los usuarios y permite crear (POST), actualizar parcialmente (PATCH), reemplazar (PUT), activar/desactivar y eliminar (DELETE). |
+
+---
+
+## Modelo inicial de datos
+
+### Entidad: `usuarios`
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | `INT` | PK, AUTO_INCREMENT | Identificador único |
+| `username` | `VARCHAR(50)` | NOT NULL, UNIQUE | Nombre de usuario para iniciar sesión |
+| `email` | `VARCHAR(150)` | NOT NULL, UNIQUE | Correo electrónico |
+| `full_name` | `VARCHAR(150)` | NOT NULL | Nombre completo de la persona |
+| `password` | `VARCHAR(255)` | NOT NULL | Contraseña cifrada con `bcrypt` |
+| `activo` | `TINYINT(1)` | NOT NULL, DEFAULT 1 | 1 = cuenta habilitada, 0 = deshabilitada |
+| `creado_en` | `TIMESTAMP` | DEFAULT CURRENT_TIMESTAMP | Fecha de alta |
+| `actualizado_en` | `TIMESTAMP` | ON UPDATE CURRENT_TIMESTAMP | Fecha de última modificación |
+
+**Notas de diseño:**
+
+- La contraseña **nunca** se guarda en texto plano: se cifra con `password_hash()`
+  (algoritmo bcrypt) y se valida con `password_verify()`.
+- La API **nunca** devuelve el campo `password` en sus respuestas; se elimina del
+  objeto antes de enviarlo al cliente.
+- `username` y `email` son únicos; intentar duplicarlos devuelve un error `409 Conflict`.
+- `activo` permite deshabilitar una cuenta sin borrar el registro (borrado lógico),
+  conservando el historial.
+
+### Interfaz en TypeScript
+
+```typescript
+export interface Usuario {
+  id: number;
+  username: string;
+  email: string;
+  full_name: string;
+  activo: number;        // 1 = activo, 0 = inactivo
+  creado_en: string;
+  actualizado_en: string;
+}
+```
+
+---
+
+## API REST
+
+Un solo archivo PHP (`api/usuarios.php`) atiende todos los métodos HTTP.
+
+**URL base:** `http://localhost/api/usuarios.php`
+
+| Método | Endpoint | Acción | Éxito |
+|--------|----------|--------|-------|
+| `GET` | `usuarios.php` | Lista todos los usuarios | `200` |
+| `GET` | `usuarios.php?id=1` | Obtiene un usuario | `200` |
+| `POST` | `usuarios.php` | Crea un usuario | `201` |
+| `POST` | `usuarios.php?accion=login` | Valida credenciales | `200` |
+| `PUT` | `usuarios.php?id=1` | Reemplaza **todos** los campos | `200` |
+| `PATCH` | `usuarios.php?id=1` | Actualiza **solo** los campos enviados | `200` |
+| `DELETE` | `usuarios.php?id=1` | Elimina un usuario | `200` |
+
+### Diferencia entre PUT y PATCH
+
+Es la distinción central del diseño de la API:
+
+- **PUT** reemplaza el recurso completo. Exige que se envíen *todos* los campos,
+  incluida la contraseña. Si falta alguno responde `400`.
+- **PATCH** aplica una actualización parcial. Construye el `UPDATE` de SQL
+  dinámicamente con los campos recibidos y deja el resto intacto. Por ejemplo,
+  desactivar una cuenta envía únicamente `{"activo": 0}`.
+
+### Códigos de error implementados
+
+| Código | Significado | Cuándo se devuelve |
+|--------|-------------|--------------------|
+| `400` | Bad Request | Faltan campos obligatorios o el JSON es inválido |
+| `401` | Unauthorized | Usuario o contraseña incorrectos |
+| `403` | Forbidden | La cuenta está desactivada (`activo = 0`) |
+| `404` | Not Found | No existe un usuario con ese `id` |
+| `405` | Method Not Allowed | Método HTTP no soportado |
+| `409` | Conflict | El `username` o `email` ya están registrados |
+| `422` | Unprocessable Entity | Email con formato inválido o contraseña menor a 6 caracteres |
+| `500` | Internal Server Error | Fallo inesperado de la base de datos |
+| `503` | Service Unavailable | MySQL no está disponible |
+
+### CORS
+
+La API incluye las cabeceras CORS necesarias y responde al *preflight* `OPTIONS`
+con `204`. Sin ese manejo, el navegador bloquea las peticiones `PUT`, `PATCH` y
+`DELETE` antes de que lleguen al servidor.
+
+---
+
+## Instalación y ejecución
+
+### Requisitos
+
+- Node.js **v22.22.3+** o **v24.15.0+** (el Angular CLI valida la versión)
+- XAMPP con Apache y MySQL
+- Ionic CLI
+
+### 1. Backend (XAMPP)
+
+```bash
+# Copiar la API al directorio de Apache
+cp api/usuarios.php   C:/xampp/htdocs/api/
+cp api/database.sql   C:/xampp/htdocs/api/
+```
+
+Iniciar **Apache** y **MySQL** desde el panel de XAMPP, y después importar la base
+de datos desde phpMyAdmin (`Importar` → seleccionar `database.sql`), o por consola:
+
+```bash
+C:/xampp/mysql/bin/mysql.exe -u root < api/database.sql
+```
+
+Comprobar que responde: <http://localhost/api/usuarios.php>
+
+### 2. Frontend (Ionic)
+
+```bash
+npm install
+npm start
+```
+
+La aplicación queda disponible en <http://localhost:8100>
+
+### Usuarios de prueba
+
+| Usuario | Contraseña |
+|---------|-----------|
+| `admin` | `123456` |
+| `dmartinez` | `123456` |
+
+### Ejecutar en el dispositivo
+
+`localhost` no funciona desde un teléfono o emulador. Hay que cambiar la constante
+`baseUrl` en `src/app/services/api.service.ts`:
+
+| Entorno | URL |
+|---------|-----|
+| Navegador | `http://localhost/api/usuarios.php` |
+| Emulador Android | `http://10.0.2.2/api/usuarios.php` |
+| Dispositivo físico | `http://<IP-de-la-PC>/api/usuarios.php` |
+
+```bash
+npm run build
+npx cap sync
+npx cap open android
+```
+
+---
+
+## Estructura del proyecto
+
+```
+APPIonic/
+├── api/
+│   ├── usuarios.php          # API REST completa (GET, POST, PUT, PATCH, DELETE)
+│   └── database.sql          # Script de la base de datos
+├── docs/
+│   ├── PROMPTS-IA.md         # Evidencia de prompts usados con IA
+│   └── capturas/             # Capturas de ejecución
+├── src/app/
+│   ├── services/
+│   │   ├── api.service.ts    # Cliente HTTP con axios
+│   │   └── photo.service.ts  # Cámara y almacenamiento (Capacitor)
+│   ├── tab1/                 # Vista 1: Login / Registro
+│   ├── tab2/                 # Vista 2: Galería de fotos
+│   └── tab3/                 # Vista 3: CRUD de usuarios
+└── README.md
+```
+
+---
+
+## Tecnologías
+
+| Capa | Tecnología |
+|------|-----------|
+| Framework | Ionic 8 + Angular 22 (componentes standalone) |
+| Runtime nativo | Capacitor 8 |
+| Cliente HTTP | axios 1.20 |
+| Estado | Angular Signals (aplicación *zoneless*) |
+| Backend | PHP 8 con PDO |
+| Base de datos | MySQL / MariaDB |
+| Pruebas | Karma + Jasmine (35 pruebas) |
+
+---
+
+## Pruebas
+
+```bash
+npm test
+```
+
+El proyecto incluye **35 pruebas unitarias** que cubren el inicio de sesión, el
+registro, las operaciones del CRUD y el manejo de errores de la API. Las pruebas
+usan un *mock* del servicio, por lo que no requieren que XAMPP esté encendido.
+
+> **Nota:** no ejecutar `npm test` mientras `npm start` está corriendo; ambos
+> procesos compilan al mismo tiempo y provocan un error `EPIPE`.
+
+---
+
+## Documentación adicional
+
+- [`docs/PROMPTS-IA.md`](docs/PROMPTS-IA.md) — Prompts utilizados con IA y análisis
+  del código aceptado, modificado y descartado.
+
+---
+
+## Autor
+
+**David Martínez Mercado**
+Ingeniería en Software — 9° cuatrimestre
+Universidad Politécnica de Durango
