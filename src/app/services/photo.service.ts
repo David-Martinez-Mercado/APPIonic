@@ -5,6 +5,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
 import { Platform } from '@ionic/angular';
 import { Capacitor } from '@capacitor/core';
+import type { UserPhoto } from '../models';
 
 @Injectable({
   providedIn: 'root',
@@ -148,7 +149,4 @@ export class PhotoService {
   }
 }
 
-export interface UserPhoto {
-  filepath: string;
-  webviewPath?: string;
-}
+export type { UserPhoto } from '../models';
