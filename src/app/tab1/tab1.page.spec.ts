@@ -3,9 +3,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideIonicAngular } from '@ionic/angular';
 
 import { Tab1Page } from './tab1.page';
-import { ApiService, ApiError, Usuario } from '../services/api.service';
+import { UsuarioRepository } from '../services/usuario.repository';
+import { ApiError, Usuario } from '../models';
 
-/** Usuario falso que devuelve el ApiService simulado. */
+/** Usuario falso que devuelve el repositorio simulado. */
 const USUARIO_DEMO: Usuario = {
   id: 1,
   username: 'admin',
@@ -19,7 +20,7 @@ const USUARIO_DEMO: Usuario = {
 describe('Tab1Page', () => {
   let component: Tab1Page;
   let fixture: ComponentFixture<Tab1Page>;
-  let api: jasmine.SpyObj<ApiService>;
+  let api: jasmine.SpyObj<UsuarioRepository>;
 
   const container = () => fixture.nativeElement.querySelector('.container') as HTMLElement;
   const texto = (selector: string) =>
@@ -36,7 +37,7 @@ describe('Tab1Page', () => {
 
   beforeEach(async () => {
     // Se simula el servicio para no pegarle a XAMPP durante los tests
-    api = jasmine.createSpyObj<ApiService>('ApiService', ['login', 'crear']);
+    api = jasmine.createSpyObj<UsuarioRepository>('UsuarioRepository', ['login', 'crear']);
     api.login.and.resolveTo(USUARIO_DEMO);
     api.crear.and.resolveTo(USUARIO_DEMO);
 
@@ -45,7 +46,7 @@ describe('Tab1Page', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideIonicAngular(),
-        { provide: ApiService, useValue: api },
+        { provide: UsuarioRepository, useValue: api },
       ],
     }).compileComponents();
 
@@ -91,12 +92,12 @@ describe('Tab1Page', () => {
 
   // ---------- login contra la API ----------
 
-  it('llama a ApiService.login con las credenciales y muestra la palomita', async () => {
+  it('llama a UsuarioRepository.login con las credenciales y muestra la palomita', async () => {
     component.login = { username: 'admin', password: '123456' };
 
     await click('.container-form .btn');
 
-    expect(api.login).toHaveBeenCalledWith('admin', '123456');
+    expect(api.login).toHaveBeenCalledWith({ username: 'admin', password: '123456' });
     expect(container().classList.contains('active')).toBeTrue();
     expect(component.usuario()).toEqual(USUARIO_DEMO);
     expect(texto('.bienvenida')).toContain('Administrador');
@@ -135,11 +136,11 @@ describe('Tab1Page', () => {
 
   // ---------- registro contra la API ----------
 
-  it('usa ApiService.crear cuando esta en el panel de Sign up', async () => {
+  it('usa UsuarioRepository.crear cuando esta en el panel de Sign up', async () => {
     await click('.info-item .btn'); // cambia a Sign up
     component.signup = {
       email: 'nuevo@demo.com',
-      fullName: 'Usuario Nuevo',
+      full_name: 'Usuario Nuevo',
       username: 'nuevo',
       password: '123456',
     };
@@ -161,7 +162,7 @@ describe('Tab1Page', () => {
     await click('.info-item .btn');
     component.signup = {
       email: 'admin@demo.com',
-      fullName: 'X',
+      full_name: 'X',
       username: 'admin',
       password: '123456',
     };

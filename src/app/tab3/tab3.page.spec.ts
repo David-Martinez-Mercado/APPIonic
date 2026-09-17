@@ -1,9 +1,10 @@
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideIonicAngular } from '@ionic/angular';
 
 import { Tab3Page } from './tab3.page';
-import { ApiService, ApiError, Usuario } from '../services/api.service';
+import { UsuarioRepository } from '../services/usuario.repository';
+import { ApiError, Usuario } from '../models';
 
 const ADMIN: Usuario = {
   id: 1,
@@ -28,7 +29,7 @@ const ANA: Usuario = {
 describe('Tab3Page (CRUD)', () => {
   let component: Tab3Page;
   let fixture: ComponentFixture<Tab3Page>;
-  let api: jasmine.SpyObj<ApiService>;
+  let api: jasmine.SpyObj<UsuarioRepository>;
 
   const texto = (sel: string) =>
     (fixture.nativeElement.querySelector(sel) as HTMLElement | null)?.textContent?.trim() ?? '';
@@ -41,14 +42,16 @@ describe('Tab3Page (CRUD)', () => {
   };
 
   beforeEach(async () => {
-    api = jasmine.createSpyObj<ApiService>('ApiService', [
-      'listar',
-      'crear',
-      'reemplazar',
-      'actualizar',
-      'eliminar',
-    ]);
-    api.listar.and.resolveTo([ADMIN, ANA]);
+    const cache = signal<Usuario[]>([]);
+    api = jasmine.createSpyObj<UsuarioRepository>(
+      'UsuarioRepository',
+      ['listar', 'crear', 'reemplazar', 'actualizar', 'eliminar'],
+      { usuarios: cache },
+    );
+    api.listar.and.callFake(async () => {
+      cache.set([ADMIN, ANA]);
+      return [ADMIN, ANA];
+    });
     api.crear.and.resolveTo(ADMIN);
     api.reemplazar.and.resolveTo(ADMIN);
     api.actualizar.and.resolveTo(ADMIN);
@@ -59,7 +62,7 @@ describe('Tab3Page (CRUD)', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideIonicAngular(),
-        { provide: ApiService, useValue: api },
+        { provide: UsuarioRepository, useValue: api },
       ],
     }).compileComponents();
 
