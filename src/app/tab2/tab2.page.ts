@@ -14,7 +14,7 @@ import {
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { camera, trash, close } from 'ionicons/icons';
-import type { UserPhoto } from '../services/photo.service';
+import type { UserPhoto } from '../models';
 import { PhotoService } from '../services/photo.service';
 
 @Component({

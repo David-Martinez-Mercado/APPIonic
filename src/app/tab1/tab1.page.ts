@@ -1,7 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
-import { ApiService, ApiError, Usuario } from '../services/api.service';
+import { UsuarioRepository } from '../services/usuario.repository';
+import { ApiError, Usuario, Credenciales, NuevoUsuario } from '../models';
 
 @Component({
   selector: 'app-tab1',
@@ -10,15 +11,15 @@ import { ApiService, ApiError, Usuario } from '../services/api.service';
   imports: [IonHeader, IonToolbar, IonTitle, IonContent, FormsModule],
 })
 export class Tab1Page {
-  private api = inject(ApiService);
+  private repo = inject(UsuarioRepository);
 
   /** false = panel de Log in visible, true = panel de Sign up visible */
   isLogIn = false;
   /** true = estado final con la palomita */
   isActive = false;
 
-  login = { username: '', password: '' };
-  signup = { email: '', fullName: '', username: '', password: '' };
+  login: Credenciales = { username: '', password: '' };
+  signup: NuevoUsuario = { email: '', full_name: '', username: '', password: '' };
 
   // Se usan signals porque la app es zoneless: axios responde fuera de
   // Angular y sin signal la vista no se volveria a pintar sola.
@@ -61,19 +62,19 @@ export class Tab1Page {
     if (!username.trim() || !password.trim()) {
       return Promise.reject(new ApiError('Escribe tu usuario y contrasena.', 400));
     }
-    return this.api.login(username.trim(), password);
+    return this.repo.login({ username: username.trim(), password });
   }
 
   private registrar(): Promise<Usuario> {
-    const { email, fullName, username, password } = this.signup;
+    const { email, full_name, username, password } = this.signup;
 
-    if (!email.trim() || !fullName.trim() || !username.trim() || !password.trim()) {
+    if (!email.trim() || !full_name.trim() || !username.trim() || !password.trim()) {
       return Promise.reject(new ApiError('Llena todos los campos.', 400));
     }
-    return this.api.crear({
+    return this.repo.crear({
       username: username.trim(),
       email: email.trim(),
-      full_name: fullName.trim(),
+      full_name: full_name.trim(),
       password,
     });
   }
@@ -83,6 +84,6 @@ export class Tab1Page {
     this.mensajeError.set('');
     this.usuario.set(null);
     this.login = { username: '', password: '' };
-    this.signup = { email: '', fullName: '', username: '', password: '' };
+    this.signup = { email: '', full_name: '', username: '', password: '' };
   }
 }

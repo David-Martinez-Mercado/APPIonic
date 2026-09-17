@@ -1,24 +1,14 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
-import { ApiService, ApiError, Usuario } from '../services/api.service';
-
-/** Campos del formulario. */
-interface FormularioUsuario {
-  username: string;
-  email: string;
-  full_name: string;
-  password: string;
-  activo: number;
-}
-
-const FORM_VACIO: FormularioUsuario = {
-  username: '',
-  email: '',
-  full_name: '',
-  password: '',
-  activo: 1,
-};
+import { UsuarioRepository } from '../services/usuario.repository';
+import {
+  ApiError,
+  Usuario,
+  CambiosUsuario,
+  FormularioUsuario,
+  FORM_VACIO,
+} from '../models';
 
 @Component({
   selector: 'app-tab3',
@@ -27,10 +17,12 @@ const FORM_VACIO: FormularioUsuario = {
   imports: [IonHeader, IonToolbar, IonTitle, IonContent, FormsModule],
 })
 export class Tab3Page implements OnInit {
-  private api = inject(ApiService);
+  private repo = inject(UsuarioRepository);
+
+  /** La lista vive en el repositorio; la vista solo la lee. */
+  usuarios = this.repo.usuarios;
 
   // Signals: la app es zoneless, axios responde fuera de Angular.
-  usuarios = signal<Usuario[]>([]);
   cargando = signal(false);
   mensajeError = signal('');
   mensajeOk = signal('');
@@ -62,7 +54,7 @@ export class Tab3Page implements OnInit {
     this.cargando.set(true);
     this.mensajeError.set('');
     try {
-      this.usuarios.set(await this.api.listar());
+      await this.repo.listar();
     } catch (e) {
       this.mostrarError(e);
     } finally {
@@ -96,7 +88,7 @@ export class Tab3Page implements OnInit {
     try {
       if (id === null) {
         // ---------- POST ----------
-        await this.api.crear({
+        await this.repo.crear({
           username: this.form.username.trim(),
           email: this.form.email.trim(),
           full_name: this.form.full_name.trim(),
@@ -111,7 +103,7 @@ export class Tab3Page implements OnInit {
           this.cargando.set(false);
           return;
         }
-        await this.api.reemplazar(id, {
+        await this.repo.reemplazar(id, {
           username: this.form.username.trim(),
           email: this.form.email.trim(),
           full_name: this.form.full_name.trim(),
@@ -129,14 +121,13 @@ export class Tab3Page implements OnInit {
           this.cargando.set(false);
           return;
         }
-        await this.api.actualizar(id, cambios);
+        await this.repo.actualizar(id, cambios);
         this.mensajeOk.set(
           `Usuario actualizado (PATCH 200). Campos enviados: ${Object.keys(cambios).join(', ')}.`,
         );
       }
 
       this.cancelar();
-      await this.cargar();
     } catch (e) {
       this.mostrarError(e);
     } finally {
@@ -145,8 +136,8 @@ export class Tab3Page implements OnInit {
   }
 
   /** Compara el formulario contra el original: eso es lo que hace util al PATCH. */
-  private calcularCambios(): Partial<Usuario & { password: string }> {
-    const cambios: Partial<Usuario & { password: string }> = {};
+  private calcularCambios(): CambiosUsuario {
+    const cambios: CambiosUsuario = {};
     const o = this.original;
 
     if (!o) {
@@ -207,13 +198,12 @@ export class Tab3Page implements OnInit {
     this.limpiarMensajes();
     this.cargando.set(true);
     try {
-      await this.api.eliminar(u.id);
+      await this.repo.eliminar(u.id);
       this.mensajeOk.set('Usuario eliminado correctamente (DELETE 200).');
 
       if (this.editandoId() === u.id) {
         this.cancelar();
       }
-      await this.cargar();
     } catch (e) {
       this.mostrarError(e);
     } finally {
@@ -230,11 +220,10 @@ export class Tab3Page implements OnInit {
     this.cargando.set(true);
     try {
       const nuevo = u.activo === 1 ? 0 : 1;
-      await this.api.actualizar(u.id, { activo: nuevo });
+      await this.repo.actualizar(u.id, { activo: nuevo });
       this.mensajeOk.set(
         `Usuario ${nuevo === 1 ? 'activado' : 'desactivado'} (PATCH 200, solo se envio "activo").`,
       );
-      await this.cargar();
     } catch (e) {
       this.mostrarError(e);
     } finally {
