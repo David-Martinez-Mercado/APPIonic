@@ -1,12 +1,13 @@
 @use "sass:color";
 
-// Mismas variables y convenciones que la vista de usuarios (tab3), para que
-// las dos pantallas de CRUD se vean como parte de la misma aplicacion.
 $fuente-principal: 'Roboto', sans-serif;
 $color-principal: #455a64;
+$acento: #e08a1e;
+$verde: #1b7f4b;
 $bk1: 700px;
 
 $claro-50: color.adjust($color-principal, $lightness: 50%);
+$claro-55: color.adjust($color-principal, $lightness: 55%);
 $claro-60: color.adjust($color-principal, $lightness: 60%);
 $oscuro-15: color.adjust($color-principal, $lightness: -15%);
 
@@ -20,12 +21,12 @@ ion-content {
 
 .contenedor,
 .contenedor h1,
+.contenedor h2,
 .contenedor h3,
-.contenedor label,
 .contenedor strong,
 .contenedor li,
-.contenedor span:not(.nombre-empresa):not(.estrella),
-.contenedor p:not(.aviso) {
+.contenedor span:not(.nombre-empresa):not(.estado):not(.importe):not(.precio),
+.contenedor p:not(.aviso):not(.aviso-cache):not(.cita) {
   color: $color-principal;
 }
 
@@ -38,212 +39,375 @@ ion-content {
 
 .logo {
   text-align: center;
-  margin-bottom: 0.4rem;
-  font-size: 1.6rem;
+  margin-bottom: 1.2rem;
+  font-size: 1.7rem;
 }
 
 .nombre-empresa {
-  color: $oscuro-15;
+  color: $acento;
 }
 
-.leyenda {
-  text-align: center;
-  font-size: 0.85rem;
-  margin-bottom: 1rem;
-  opacity: 0.85;
+.seccion {
+  border-bottom: 1px solid rgba($color-principal, 0.2);
+  font-size: 1rem;
+  margin: 1.4rem 0 0.8rem;
+  padding-bottom: 0.3rem;
 }
 
-.wrapper {
-  box-shadow: 0 0 20px 0 rgba($color-principal, 0.7);
-  border-radius: 5px;
-  overflow: hidden;
+// ---------------- Etiquetas de estado ----------------
+.estado {
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: bold;
+  padding: 0.18rem 0.6rem;
+  white-space: nowrap;
+
+  &.gris        { background-color: #eceff1; color: #546e7a !important; }
+  &.azul        { background-color: #e3f2fd; color: #1565c0 !important; }
+  &.verde       { background-color: #e6f4ea; color: #10603a !important; }
+  &.ambar       { background-color: #fff4e5; color: #8a5300 !important; }
+  &.verde-oscuro{ background-color: #1b7f4b; color: #fff !important; }
+  &.rojo        { background-color: #fdecea; color: #8c1d18 !important; }
+}
+
+// ---------------- Tarjetas de la lista ----------------
+.tarjetas {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: 1fr;
 
   @media screen and (min-width: $bk1) {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: stretch;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-// ---------------- Panel izquierdo: lista ----------------
-.panel-lista {
-  padding: 1rem;
-  background-color: $claro-50;
-
-  h3 {
-    text-align: center;
-    margin-bottom: 0.5rem;
-
-    @media screen and (min-width: $bk1) {
-      text-align: left;
-    }
-  }
-}
-
-.contador {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: normal;
-  opacity: 0.8;
-}
-
-.vacio {
-  font-size: 0.85rem;
-  font-style: italic;
-  opacity: 0.8;
-  text-align: center;
-  padding: 0.8rem 0;
-}
-
-.lista {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.nota {
+.tarjeta {
   background-color: #fff;
-  border-radius: 4px;
-  margin-bottom: 0.6rem;
-  padding: 0.65rem 0.8rem;
+  border-radius: 5px;
+  box-shadow: 0 0 10px 0 rgba($color-principal, 0.35);
+  cursor: pointer;
+  padding: 0.85rem;
 
-  &.seleccionada {
-    outline: 2px solid $oscuro-15;
+  &:hover {
+    box-shadow: 0 0 14px 0 rgba($color-principal, 0.55);
   }
 
-  .datos {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 0.45rem;
-  }
-
-  .contenido {
-    font-size: 0.85rem;
-    margin-top: 0.15rem;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  .meta {
-    font-size: 0.72rem;
+  &.apagada {
     opacity: 0.75;
   }
 
-  .estrella {
-    color: #b26a00;
-  }
-}
+  .fila {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
 
-.acciones {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-
-.mini {
-  background-color: $claro-60;
-  border: 1px solid rgba($color-principal, 0.35);
-  border-radius: 3px;
-  color: $color-principal;
-  cursor: pointer;
-  font-size: 0.72rem;
-  padding: 0.25rem 0.55rem;
-
-  &:hover {
-    background-color: #fff;
-  }
-
-  &.peligro {
-    border-color: rgba(#b3261e, 0.45);
-    color: #8c1d18;
-  }
-}
-
-.vaciar {
-  background: none;
-  border: 1px solid rgba(#b3261e, 0.45);
-  border-radius: 3px;
-  color: #8c1d18;
-  cursor: pointer;
-  display: block;
-  font-size: 0.75rem;
-  margin: 0.8rem auto 0;
-  padding: 0.3rem 0.8rem;
-}
-
-// ---------------- Panel derecho: formulario ----------------
-.panel-form {
-  padding: 1rem;
-
-  h3 {
-    margin-bottom: 0.7rem;
-  }
-
-  label {
-    display: block;
-    font-size: 0.8rem;
-    margin-bottom: 0.2rem;
-    margin-top: 0.6rem;
-  }
-
-  input,
-  textarea {
-    background-color: #fff;
-    border: 1px solid rgba($color-principal, 0.4);
-    border-radius: 3px;
-    box-sizing: border-box;
-    color: $color-principal;
-    font-family: $fuente-principal;
-    font-size: 0.9rem;
-    padding: 0.45rem 0.55rem;
-    width: 100%;
-
-    &:focus {
-      border-color: $oscuro-15;
-      outline: none;
+    &.pie {
+      margin-top: 0.5rem;
     }
   }
 
-  textarea {
-    resize: vertical;
+  .meta {
+    font-size: 0.74rem;
+    opacity: 0.78;
+  }
+
+  .importe {
+    color: $acento !important;
+    font-weight: bold;
+  }
+
+  .cita {
+    background-color: #e6f4ea;
+    border-radius: 3px;
+    color: #10603a !important;
+    font-size: 0.75rem;
+    margin: 0.5rem 0 0;
+    padding: 0.28rem 0.5rem;
   }
 }
 
-.botones {
+// ---------------- Barra de avance ----------------
+.barra {
+  background-color: $claro-55;
+  border-radius: 10px;
+  height: 7px;
+  margin: 0.6rem 0 0.25rem;
+  overflow: hidden;
+  width: 100%;
+
+  .relleno {
+    background-color: $verde;
+    height: 100%;
+    // La transicion hace visible el avance cuando el administrador
+    // mueve el pedido de estado y la vista se actualiza.
+    transition: width 0.35s ease;
+  }
+}
+
+.progreso {
+  margin: 1rem 0 0.8rem;
+}
+
+.porcentaje {
+  font-size: 0.78rem;
+  opacity: 0.8;
+}
+
+// ---------------- Linea de pasos ----------------
+.pasos {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0 0 1.2rem;
+  padding: 0;
 }
 
-.principal,
-.secundario {
-  border-radius: 3px;
+.paso {
+  align-items: center;
+  background-color: $claro-55;
+  border-radius: 14px;
+  display: flex;
+  font-size: 0.74rem;
+  gap: 0.25rem;
+  opacity: 0.6;
+  padding: 0.22rem 0.6rem;
+
+  .marca {
+    font-weight: bold;
+  }
+
+  &.cumplido {
+    background-color: #e6f4ea;
+    opacity: 1;
+
+    .marca,
+    .nombre {
+      color: #10603a !important;
+    }
+  }
+
+  &.actual {
+    background-color: $color-principal;
+    opacity: 1;
+
+    .marca,
+    .nombre {
+      color: #fff !important;
+    }
+  }
+}
+
+// ---------------- Detalle ----------------
+.detalle {
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 0 0 20px 0 rgba($color-principal, 0.55);
+  padding: 1.1rem;
+}
+
+.volver {
+  background: none;
+  border: none;
+  color: $acento;
   cursor: pointer;
-  font-size: 0.85rem;
-  padding: 0.5rem 1.1rem;
+  font-family: $fuente-principal;
+  font-size: 0.82rem;
+  margin-bottom: 0.8rem;
+  padding: 0;
 }
 
+.cabecera {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: space-between;
+
+  h2 {
+    font-size: 1.2rem;
+    margin: 0;
+  }
+
+  .meta {
+    font-size: 0.76rem;
+    opacity: 0.78;
+  }
+}
+
+.bloques {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: 1fr;
+  margin-top: 0.8rem;
+
+  @media screen and (min-width: $bk1) {
+    grid-template-columns: 1.4fr 1fr;
+  }
+}
+
+.bloque {
+  background-color: $claro-50;
+  border-radius: 4px;
+  padding: 0.8rem;
+
+  h3 {
+    font-size: 0.9rem;
+    margin: 0 0 0.5rem;
+  }
+}
+
+.dato {
+  font-size: 0.82rem;
+  margin: 0.2rem 0;
+
+  &.destacado {
+    background-color: #fff;
+    border-left: 3px solid $verde;
+    border-radius: 3px;
+    margin: 0.4rem 0;
+    padding: 0.3rem 0.5rem;
+  }
+}
+
+.renglon {
+  display: flex;
+  font-size: 0.84rem;
+  justify-content: space-between;
+  padding: 0.15rem 0;
+
+  &.total {
+    border-top: 1px solid rgba($color-principal, 0.25);
+    font-weight: bold;
+    margin-top: 0.3rem;
+    padding-top: 0.35rem;
+
+    span:last-child {
+      color: $acento !important;
+    }
+  }
+}
+
+// ---------------- Partidas ----------------
+.partidas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    align-items: center;
+    border-bottom: 1px solid rgba($color-principal, 0.12);
+    display: flex;
+    font-size: 0.84rem;
+    gap: 0.5rem;
+    padding: 0.4rem 0;
+  }
+
+  .cant {
+    background-color: $claro-55;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 0.1rem 0.35rem;
+  }
+
+  .nombre {
+    flex-grow: 1;
+  }
+
+  .precio {
+    color: $acento !important;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+}
+
+// ---------------- Bitacora ----------------
+.historial {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    gap: 0.6rem;
+    padding: 0.4rem 0;
+    position: relative;
+  }
+
+  .punto {
+    background-color: $verde;
+    border-radius: 50%;
+    flex-shrink: 0;
+    height: 9px;
+    margin-top: 0.4rem;
+    width: 9px;
+  }
+
+  strong {
+    font-size: 0.85rem;
+    margin-right: 0.4rem;
+  }
+
+  .meta {
+    font-size: 0.73rem;
+    opacity: 0.75;
+  }
+
+  .comentario {
+    font-size: 0.8rem;
+    margin: 0.15rem 0 0;
+    opacity: 0.9;
+  }
+}
+
+// ---------------- Botones y estados ----------------
 .principal {
   background-color: $color-principal;
   border: 1px solid $color-principal;
+  border-radius: 3px;
   color: #fff;
+  cursor: pointer;
+  font-family: $fuente-principal;
+  font-size: 0.88rem;
+  padding: 0.5rem 1.1rem;
 
   &:hover {
     background-color: $oscuro-15;
   }
 }
 
-.secundario {
+.cancelar {
   background: none;
-  border: 1px solid rgba($color-principal, 0.45);
-  color: $color-principal;
+  border: 1px solid rgba(#b3261e, 0.45);
+  border-radius: 3px;
+  color: #8c1d18;
+  cursor: pointer;
+  display: block;
+  font-family: $fuente-principal;
+  font-size: 0.8rem;
+  margin: 1.2rem auto 0;
+  padding: 0.35rem 0.9rem;
+}
+
+.vacio-estado {
+  padding: 2rem 0;
+  text-align: center;
+}
+
+.vacio {
+  font-size: 0.9rem;
+  font-style: italic;
+  opacity: 0.8;
+  padding: 0.8rem 0;
+  text-align: center;
 }
 
 // ---------------- Avisos ----------------
 .aviso {
   border-radius: 4px;
   font-size: 0.85rem;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.8rem;
   padding: 0.65rem 0.8rem;
 
   &.error {
@@ -257,4 +421,14 @@ ion-content {
     border-left: 4px solid #1b7f4b;
     color: #10603a;
   }
+}
+
+.aviso-cache {
+  background-color: #fff4e5;
+  border-left: 4px solid #b26a00;
+  border-radius: 4px;
+  color: #8a5300;
+  font-size: 0.8rem;
+  margin-bottom: 0.9rem;
+  padding: 0.55rem 0.7rem;
 }

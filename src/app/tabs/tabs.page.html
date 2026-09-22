@@ -2,24 +2,37 @@
 
   <ion-tab-bar slot="bottom">
     <ion-tab-button tab="tab1" href="/tabs/tab1">
-      <ion-icon aria-hidden="true" name="triangle"></ion-icon>
-      <ion-label>Tab 1</ion-label>
+      <ion-icon aria-hidden="true" name="person-circle-outline"></ion-icon>
+      <ion-label>Acceso</ion-label>
     </ion-tab-button>
 
     <ion-tab-button tab="tab2" href="/tabs/tab2">
-      <ion-icon aria-hidden="true" name="images"></ion-icon>
-      <ion-label>Photos</ion-label>
+      <ion-icon aria-hidden="true" name="sunny-outline"></ion-icon>
+      <ion-label>Catalogo</ion-label>
     </ion-tab-button>
 
     <ion-tab-button tab="tab3" href="/tabs/tab3">
-      <ion-icon aria-hidden="true" name="people"></ion-icon>
-      <ion-label>Usuarios</ion-label>
+      <ion-icon aria-hidden="true" name="cart-outline"></ion-icon>
+      <ion-label>Carrito</ion-label>
+      <!-- Globo con las piezas del carrito. Se lee del repositorio, que
+           a su vez lo lee del dispositivo: sobrevive al cierre de la app. -->
+      @if (piezas()) {
+        <ion-badge color="warning">{{ piezas() }}</ion-badge>
+      }
     </ion-tab-button>
 
     <ion-tab-button tab="tab4" href="/tabs/tab4">
-      <ion-icon aria-hidden="true" name="document-text"></ion-icon>
-      <ion-label>Notas</ion-label>
+      <ion-icon aria-hidden="true" name="construct-outline"></ion-icon>
+      <ion-label>Mis pedidos</ion-label>
     </ion-tab-button>
+
+    <!-- La pestana de administracion solo existe para el rol admin. -->
+    @if (esAdmin()) {
+      <ion-tab-button tab="tab5" href="/tabs/tab5">
+        <ion-icon aria-hidden="true" name="clipboard-outline"></ion-icon>
+        <ion-label>Admin</ion-label>
+      </ion-tab-button>
+    }
   </ion-tab-bar>
 
 </ion-tabs>

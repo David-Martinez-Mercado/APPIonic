@@ -1,262 +1,209 @@
-# APPIonic — Aplicación base del cuatrimestre
+# SolarApp — Venta e instalación de sistemas solares
 
 Aplicación móvil híbrida construida con **Ionic + Angular + Capacitor**, conectada a una
 **API REST en PHP** que corre sobre XAMPP con base de datos **MySQL**.
 
-Este es el proyecto base que se irá ampliando durante el cuatrimestre en la materia
-*Programación para Móviles II*.
+Proyecto de la materia *Programación para Móviles II*.
 
 ---
 
-## Objetivo de la aplicación
+## Qué hace la aplicación
 
-Gestionar los usuarios de un sistema desde un dispositivo móvil.
+Permite a un cliente **armar su proyecto solar** (paneles, estructuras, baterías,
+inversores e instalación), enviarlo como solicitud y **seguir en qué paso va**.
 
-La aplicación permite **registrar** una cuenta, **iniciar sesión** validando las
-credenciales contra un servidor real, y **administrar** el catálogo completo de
-usuarios (consultar, crear, actualizar y eliminar) consumiendo una API REST propia.
+Del otro lado, un administrador **recibe las solicitudes, las aprueba o rechaza, y fija
+las fechas** de visita técnica e instalación.
 
-Incluye además un módulo de **galería de fotos** que usa la cámara del dispositivo
-a través de Capacitor, para demostrar el acceso a las capacidades nativas del teléfono.
+No es una tienda de compra inmediata: un sistema solar no se compra con un clic. Se
+cotiza, se revisa el sitio y se agenda, que es como funciona el negocio real.
 
-El objetivo académico es integrar en un solo proyecto los tres elementos que se verán
-durante el curso:
+### El proceso de un pedido
 
-1. Interfaz móvil con Ionic y componentes de Angular.
-2. Consumo de servicios web (HTTP con axios) contra un backend propio.
-3. Acceso a hardware del dispositivo mediante Capacitor.
+```
+solicitado → en_revision → aprobado → agendado → en_instalacion → completado
+                  ↓             ↓          ↓
+              rechazado     cancelado   cancelado
+```
+
+Las transiciones válidas las decide el servidor: no se puede saltar de *solicitado* a
+*completado*, rechazar sin motivo, ni agendar sin fecha de instalación.
 
 ---
 
-## Vistas de la aplicación
-
-La aplicación tiene **cuatro vistas** organizadas en pestañas:
+## Vistas
 
 | # | Vista | Ruta | Descripción |
 |---|-------|------|-------------|
-| 1 | **Acceso** | `/tabs/tab1` | Inicio de sesión y registro de usuarios. Panel animado que alterna entre ambos formularios. Valida contra la API y muestra los errores que devuelve el servidor. |
-| 2 | **Fotos** | `/tabs/tab2` | Galería que toma fotografías con la cámara del dispositivo y las almacena en el sistema de archivos usando Capacitor. |
-| 3 | **Usuarios** | `/tabs/tab3` | CRUD completo: lista todos los usuarios y permite crear (POST), actualizar parcialmente (PATCH), reemplazar (PUT), activar/desactivar y eliminar (DELETE). Guarda una copia local para seguir mostrando datos sin conexión. |
-| 4 | **Notas** | `/tabs/tab4` | CRUD de notas guardadas en el propio dispositivo con Capacitor Preferences. No necesita servidor: la información permanece al cerrar y reabrir la aplicación. |
+| 1 | **Acceso** | `/tabs/tab1` | Inicio de sesión y registro. La sesión sobrevive al cierre de la app. |
+| 2 | **Catálogo** | `/tabs/tab2` | Productos con foto, precio y existencias. Filtros por categoría y buscador. Funciona sin conexión. |
+| 3 | **Carrito** | `/tabs/tab3` | El proyecto en construcción, guardado en el dispositivo. Desde aquí se envía la solicitud. |
+| 4 | **Mis pedidos** | `/tabs/tab4` | Seguimiento: barra de avance, fechas, componentes e historial de cada solicitud. |
+| 5 | **Admin** | `/tabs/tab5` | Solo para el rol `admin`. Aprobar, rechazar, agendar y registrar notas técnicas. |
+
+La pestaña de administración **solo existe si el usuario que inició sesión es
+administrador**; para un cliente no aparece.
 
 ---
 
-## Modelo inicial de datos
+## Modelo de datos
 
-### Entidad: `usuarios`
-
-| Campo | Tipo | Restricciones | Descripción |
-|-------|------|---------------|-------------|
-| `id` | `INT` | PK, AUTO_INCREMENT | Identificador único |
-| `username` | `VARCHAR(50)` | NOT NULL, UNIQUE | Nombre de usuario para iniciar sesión |
-| `email` | `VARCHAR(150)` | NOT NULL, UNIQUE | Correo electrónico |
-| `full_name` | `VARCHAR(150)` | NOT NULL | Nombre completo de la persona |
-| `password` | `VARCHAR(255)` | NOT NULL | Contraseña cifrada con `bcrypt` |
-| `activo` | `TINYINT(1)` | NOT NULL, DEFAULT 1 | 1 = cuenta habilitada, 0 = deshabilitada |
-| `creado_en` | `TIMESTAMP` | DEFAULT CURRENT_TIMESTAMP | Fecha de alta |
-| `actualizado_en` | `TIMESTAMP` | ON UPDATE CURRENT_TIMESTAMP | Fecha de última modificación |
-
-**Notas de diseño:**
-
-- La contraseña **nunca** se guarda en texto plano: se cifra con `password_hash()`
-  (algoritmo bcrypt) y se valida con `password_verify()`.
-- La API **nunca** devuelve el campo `password` en sus respuestas; se elimina del
-  objeto antes de enviarlo al cliente.
-- `username` y `email` son únicos; intentar duplicarlos devuelve un error `409 Conflict`.
-- `activo` permite deshabilitar una cuenta sin borrar el registro (borrado lógico),
-  conservando el historial.
-
-### Interfaz en TypeScript
-
-```typescript
-export interface Usuario {
-  id: number;
-  username: string;
-  email: string;
-  full_name: string;
-  activo: number;        // 1 = activo, 0 = inactivo
-  creado_en: string;
-  actualizado_en: string;
-}
 ```
+usuarios ──< pedidos ──< pedido_detalle >── productos
+                 └─────< pedido_historial
+```
+
+| Tabla | Para qué |
+|-------|----------|
+| `usuarios` | Clientes y administradores. El campo `rol` los separa. |
+| `productos` | Catálogo: paneles, estructuras, baterías, inversores, instalación y accesorios. |
+| `pedidos` | La solicitud: estado, domicilio, importes, fechas y notas del administrador. |
+| `pedido_detalle` | Partidas del pedido. Copia nombre y precio para que el histórico no cambie si el catálogo cambia. |
+| `pedido_historial` | Bitácora de cada cambio de estado. Es lo que alimenta el seguimiento. |
+
+Decisiones de diseño relevantes:
+
+- **El precio nunca viaja desde el cliente.** Al crear el pedido, el servidor vuelve a
+  tomarlo del catálogo. Si se confiara en lo que manda la app, cualquiera podría pedir
+  paneles a un peso.
+- **La creación del pedido es una transacción.** Si una partida falla (sin existencias,
+  producto dado de baja), no queda un pedido a medias.
+- **El material se aparta al solicitar** y se devuelve al catálogo si se rechaza o
+  cancela.
+- **Baja lógica en productos**: un producto referenciado por pedidos históricos no se
+  borra, se desactiva.
 
 ---
 
-## API REST
+## Arquitectura del cliente
 
-Un solo archivo PHP (`api/usuarios.php`) atiende todos los métodos HTTP.
+```
+src/app/
+├── models/                       Entidades y tipos derivados
+│   ├── usuario.model.ts
+│   ├── producto.model.ts
+│   ├── pedido.model.ts
+│   ├── carrito.model.ts
+│   └── respuesta-api.model.ts
+├── services/
+│   ├── http.service.ts           Transporte HTTP (axios) — no sabe de entidades
+│   ├── storage.service.ts        Persistencia local (Capacitor Preferences)
+│   ├── sesion.service.ts         Sesión que sobrevive al cierre
+│   ├── usuario.repository.ts     Entidad Usuario
+│   ├── producto.repository.ts    Catálogo + caché offline
+│   ├── pedido.repository.ts      Pedidos y cambios de estado
+│   └── carrito.repository.ts     Carrito 100% local
+├── tab1/ … tab5/                 Las cinco vistas
+└── tabs/                         Barra de navegación
+```
 
-**URL base:** `http://localhost/api/usuarios.php`
+El patrón es el mismo en toda la capa de datos: **el transporte no sabe de entidades y
+las vistas no saben de URLs**. Los repositorios exponen *signals* que las vistas leen
+directo, y la app es *zoneless*.
 
-| Método | Endpoint | Acción | Éxito |
-|--------|----------|--------|-------|
-| `GET` | `usuarios.php` | Lista todos los usuarios | `200` |
-| `GET` | `usuarios.php?id=1` | Obtiene un usuario | `200` |
-| `POST` | `usuarios.php` | Crea un usuario | `201` |
-| `POST` | `usuarios.php?accion=login` | Valida credenciales | `200` |
-| `PUT` | `usuarios.php?id=1` | Reemplaza **todos** los campos | `200` |
-| `PATCH` | `usuarios.php?id=1` | Actualiza **solo** los campos enviados | `200` |
-| `DELETE` | `usuarios.php?id=1` | Elimina un usuario | `200` |
+### Qué se guarda en el dispositivo
 
-### Diferencia entre PUT y PATCH
-
-Es la distinción central del diseño de la API:
-
-- **PUT** reemplaza el recurso completo. Exige que se envíen *todos* los campos,
-  incluida la contraseña. Si falta alguno responde `400`.
-- **PATCH** aplica una actualización parcial. Construye el `UPDATE` de SQL
-  dinámicamente con los campos recibidos y deja el resto intacto. Por ejemplo,
-  desactivar una cuenta envía únicamente `{"activo": 0}`.
-
-### Códigos de error implementados
-
-| Código | Significado | Cuándo se devuelve |
-|--------|-------------|--------------------|
-| `400` | Bad Request | Faltan campos obligatorios o el JSON es inválido |
-| `401` | Unauthorized | Usuario o contraseña incorrectos |
-| `403` | Forbidden | La cuenta está desactivada (`activo = 0`) |
-| `404` | Not Found | No existe un usuario con ese `id` |
-| `405` | Method Not Allowed | Método HTTP no soportado |
-| `409` | Conflict | El `username` o `email` ya están registrados |
-| `422` | Unprocessable Entity | Email con formato inválido o contraseña menor a 6 caracteres |
-| `500` | Internal Server Error | Fallo inesperado de la base de datos |
-| `503` | Service Unavailable | MySQL no está disponible |
-
-### CORS
-
-La API incluye las cabeceras CORS necesarias y responde al *preflight* `OPTIONS`
-con `204`. Sin ese manejo, el navegador bloquea las peticiones `PUT`, `PATCH` y
-`DELETE` antes de que lleguen al servidor.
+| Clave en Preferences | Contenido |
+|---|---|
+| `sesion` | Usuario autenticado (nunca la contraseña) |
+| `carrito` | El proyecto en construcción |
+| `productos_cache` | Catálogo, para navegarlo sin conexión |
+| `pedidos_cache_<id>` | Último estado conocido de los pedidos |
 
 ---
 
-## Instalación y ejecución
+## Cómo ejecutarlo
 
-### Requisitos
+### 1. Base de datos
 
-- Node.js **v22.22.3+** o **v24.15.0+** (el Angular CLI valida la versión)
-- XAMPP con Apache y MySQL
-- Ionic CLI
+Con **XAMPP** corriendo (Apache y MySQL), importar `api/database.sql` desde phpMyAdmin.
+Crea la base `app_usuarios` con las cinco tablas y datos de ejemplo.
 
-### 1. Backend (XAMPP)
+### 2. API
 
-```bash
-# Copiar la API al directorio de Apache
-cp api/usuarios.php   C:/xampp/htdocs/api/
-cp api/database.sql   C:/xampp/htdocs/api/
+Copiar los tres archivos PHP a la carpeta de Apache:
+
+```
+api/usuarios.php   →  C:\xampp\htdocs\api\usuarios.php
+api/productos.php  →  C:\xampp\htdocs\api\productos.php
+api/pedidos.php    →  C:\xampp\htdocs\api\pedidos.php
 ```
 
-Iniciar **Apache** y **MySQL** desde el panel de XAMPP, y después importar la base
-de datos desde phpMyAdmin (`Importar` → seleccionar `database.sql`), o por consola:
+### 3. Aplicación
 
 ```bash
-C:/xampp/mysql/bin/mysql.exe -u root < api/database.sql
-```
-
-Comprobar que responde: <http://localhost/api/usuarios.php>
-
-### 2. Frontend (Ionic)
-
-```bash
+cd 9b
 npm install
 npm start
 ```
 
-La aplicación queda disponible en <http://localhost:8100>
+Abre en `http://localhost:4200`.
 
-### Usuarios de prueba
+> Si la API se consume desde el emulador de Android o un teléfono físico, hay que cambiar
+> el `HOST` en `src/environments/environment.ts`: `localhost` solo funciona desde el
+> navegador de la computadora.
 
-| Usuario | Contraseña |
-|---------|-----------|
-| `admin` | `123456` |
-| `dmartinez` | `123456` |
+### Cuentas de prueba
 
-### Ejecutar en el dispositivo
+La contraseña de las tres es `123456`.
 
-`localhost` no funciona desde un teléfono o emulador. Hay que cambiar la constante
-`baseUrl` en `src/app/services/api.service.ts`:
+| Usuario | Rol | Para qué sirve |
+|---|---|---|
+| `admin` | Administrador | Ver el panel de gestión de solicitudes |
+| `dmartinez` | Cliente | Tiene pedidos de ejemplo en distintos estados |
+| `lgomez` | Cliente | Tiene una solicitud pendiente de revisar |
 
-| Entorno | URL |
-|---------|-----|
-| Navegador | `http://localhost/api/usuarios.php` |
-| Emulador Android | `http://10.0.2.2/api/usuarios.php` |
-| Dispositivo físico | `http://<IP-de-la-PC>/api/usuarios.php` |
+---
 
-```bash
-npm run build
-npx cap sync
-npx cap open android
+## Endpoints de la API
+
+### `productos.php`
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| GET | `/productos.php` | Catálogo activo |
+| GET | `/productos.php?categoria=panel` | Filtra por categoría |
+| GET | `/productos.php?buscar=litio` | Busca por nombre, descripción o SKU |
+| POST | `/productos.php` | Crea un producto |
+| PUT | `/productos.php?id=1` | Reemplaza el registro completo |
+| PATCH | `/productos.php?id=1` | Actualiza solo los campos enviados |
+| DELETE | `/productos.php?id=1` | Baja lógica |
+
+### `pedidos.php`
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| GET | `/pedidos.php` | Todas las solicitudes (administración) |
+| GET | `/pedidos.php?usuario_id=2` | Las de un cliente |
+| GET | `/pedidos.php?id=1` | Una, con partidas e historial |
+| POST | `/pedidos.php` | Crea la solicitud desde el carrito |
+| PATCH | `/pedidos.php?id=1&accion=estado` | Cambia el estado |
+| PATCH | `/pedidos.php?id=1` | Edita fechas y notas |
+| DELETE | `/pedidos.php?id=1` | Cancela (no borra) |
+
+Todas las respuestas usan la misma envoltura:
+
+```json
+{ "ok": true, "mensaje": "...", "datos": { } }
 ```
 
 ---
 
-## Estructura del proyecto
+## Documentación
 
-```
-APPIonic/
-├── api/
-│   ├── usuarios.php          # API REST completa (GET, POST, PUT, PATCH, DELETE)
-│   └── database.sql          # Script de la base de datos
-├── docs/
-│   ├── PROMPTS-IA.md         # Evidencia de prompts usados con IA
-│   ├── PERSISTENCIA.md       # Entrega 3: persistencia local
-│   ├── PROMPTS-PERSISTENCIA.md # Prompts de la entrega de persistencia
-│   └── capturas/             # Capturas de ejecución
-├── src/app/
-│   ├── services/
-│   │   ├── http.service.ts      # Transporte HTTP con axios
-│   │   ├── storage.service.ts   # Persistencia local (Capacitor Preferences)
-│   │   ├── sesion.service.ts    # Sesión que sobrevive al cierre
-│   │   ├── usuario.repository.ts# Entidad Usuario + caché offline
-│   │   ├── nota.repository.ts   # Entidad Nota (100% local)
-│   │   └── photo.service.ts     # Cámara y almacenamiento (Capacitor)
-│   ├── tab1/                 # Vista 1: Login / Registro
-│   ├── tab2/                 # Vista 2: Galería de fotos
-│   ├── tab3/                 # Vista 3: CRUD de usuarios
-│   └── tab4/                 # Vista 4: CRUD de notas locales
-└── README.md
-```
+| Archivo | Contenido |
+|---|---|
+| `docs/PERSISTENCIA.md` | Entrega de persistencia local |
+| `docs/MODELO-DATOS.md` | Modelo de datos y capa de acceso |
+| `docs/PROMPTS-IA.md` | Prompts usados durante el desarrollo |
+| `docs/capturas/` | Capturas de la aplicación en ejecución |
 
 ---
 
 ## Tecnologías
 
-| Capa | Tecnología |
-|------|-----------|
-| Framework | Ionic 8 + Angular 22 (componentes standalone) |
-| Runtime nativo | Capacitor 8 |
-| Cliente HTTP | axios 1.20 |
-| Estado | Angular Signals (aplicación *zoneless*) |
-| Backend | PHP 8 con PDO |
-| Base de datos | MySQL / MariaDB |
-| Pruebas | Karma + Jasmine (35 pruebas) |
-
----
-
-## Pruebas
-
-```bash
-npm test
-```
-
-El proyecto incluye **35 pruebas unitarias** que cubren el inicio de sesión, el
-registro, las operaciones del CRUD y el manejo de errores de la API. Las pruebas
-usan un *mock* del servicio, por lo que no requieren que XAMPP esté encendido.
-
-> **Nota:** no ejecutar `npm test` mientras `npm start` está corriendo; ambos
-> procesos compilan al mismo tiempo y provocan un error `EPIPE`.
-
----
-
-## Documentación adicional
-
-- [`docs/PROMPTS-IA.md`](docs/PROMPTS-IA.md) — Prompts utilizados con IA y análisis
-  del código aceptado, modificado y descartado.
-
----
-
-## Autor
-
-**David Martínez Mercado**
-Ingeniería en Software — 9° cuatrimestre
-Universidad Politécnica de Durango
+- **Ionic 9** + **Angular 22** (standalone, zoneless, signals)
+- **Capacitor 8** — Preferences para el almacenamiento local
+- **axios** para el consumo de la API
+- **PHP 8** + **MySQL** (PDO con sentencias preparadas)
+- Imágenes de catálogo de [Pexels](https://www.pexels.com) (uso libre)

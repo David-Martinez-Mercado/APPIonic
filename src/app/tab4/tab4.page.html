@@ -1,129 +1,265 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Notas</ion-title>
+    <ion-title>Mis pedidos</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
   <ion-header collapse="condense">
     <ion-toolbar>
-      <ion-title size="large">Notas</ion-title>
+      <ion-title size="large">Mis pedidos</ion-title>
     </ion-toolbar>
   </ion-header>
 
   <div class="contenedor">
-    <h1 class="logo"><span class="nombre-empresa">Notas</span> locales</h1>
+    <h1 class="logo">Mis <span class="nombre-empresa">solicitudes</span></h1>
 
-    <p class="leyenda">
-      Estas notas se guardan en el dispositivo con Capacitor Preferences.
-      No usan el servidor: siguen aqui aunque cierres la aplicacion.
-    </p>
+    @if (mensajeError()) {
+      <p class="aviso error">{{ mensajeError() }}</p>
+    }
+    @if (mensajeOk()) {
+      <p class="aviso ok">{{ mensajeOk() }}</p>
+    }
 
-    <div class="wrapper">
+    @if (desdeCache() && pedidos().length) {
+      <p class="aviso-cache">
+        Sin conexion con el servidor. Mostrando el ultimo estado guardado en
+        el dispositivo.
+      </p>
+    }
 
-      <!-- ================= Panel izquierdo: lista ================= -->
-      <div class="panel-lista">
-        <h3>
-          Guardadas
-          @if (total()) {
-            <span class="contador">{{ total() }} nota(s), {{ favoritas() }} favorita(s)</span>
-          }
-        </h3>
-
-        @if (!cargado()) {
-          <p class="vacio">Leyendo el almacenamiento...</p>
-        }
-
-        @if (cargado() && !total()) {
-          <p class="vacio">No hay notas todavia. Crea la primera.</p>
-        }
-
-        <ul class="lista">
-          @for (n of notas(); track n.id) {
-            <li class="nota" [class.seleccionada]="editandoId() === n.id">
-              <div class="datos">
-                <strong>
-                  @if (n.favorita) { <span class="estrella">&#9733;</span> }
-                  {{ n.titulo }}
-                </strong>
-                @if (n.contenido) {
-                  <span class="contenido">{{ n.contenido }}</span>
-                }
-                <span class="meta">
-                  Creada: {{ n.creado_en | date: 'dd/MM/yyyy HH:mm' }}
-                </span>
-                @if (n.actualizado_en !== n.creado_en) {
-                  <span class="meta">
-                    Editada: {{ n.actualizado_en | date: 'dd/MM/yyyy HH:mm' }}
-                  </span>
-                }
-              </div>
-
-              <div class="acciones">
-                <button type="button" class="mini" (click)="editar(n)">Editar</button>
-                <button type="button" class="mini" (click)="alternarFavorita(n)">
-                  {{ n.favorita ? 'Quitar' : 'Favorita' }}
-                </button>
-                <button type="button" class="mini peligro" (click)="eliminar(n)">
-                  Eliminar
-                </button>
-              </div>
-            </li>
-          }
-        </ul>
-
-        @if (total()) {
-          <button type="button" class="vaciar" (click)="vaciar()">
-            Eliminar todas
-          </button>
-        }
+    <!-- ================= Sin sesion ================= -->
+    @if (!autenticado()) {
+      <div class="vacio-estado">
+        <p class="vacio">Inicia sesion para ver el avance de tus solicitudes.</p>
+        <button type="button" class="principal" (click)="irAAcceder()">
+          Iniciar sesion
+        </button>
       </div>
+    }
 
-      <!-- ================= Panel derecho: formulario ================= -->
-      <div class="panel-form">
-        <h3>{{ editando() ? 'Editar nota' : 'Nueva nota' }}</h3>
+    @if (autenticado()) {
 
-        @if (mensajeError()) {
-          <p class="aviso error">{{ mensajeError() }}</p>
-        }
-        @if (mensajeOk()) {
-          <p class="aviso ok">{{ mensajeOk() }}</p>
-        }
+      @if (cargando() && !pedidos().length) {
+        <p class="vacio">Cargando tus solicitudes...</p>
+      }
 
-        <form (ngSubmit)="guardar()">
-          <label for="titulo">Titulo</label>
-          <input
-            id="titulo"
-            type="text"
-            name="titulo"
-            maxlength="80"
-            placeholder="Titulo de la nota"
-            [(ngModel)]="form.titulo"
-          />
+      @if (!cargando() && !pedidos().length) {
+        <div class="vacio-estado">
+          <p class="vacio">Todavia no has enviado ninguna solicitud.</p>
+          <button type="button" class="principal" (click)="irAlCatalogo()">
+            Armar mi proyecto
+          </button>
+        </div>
+      }
 
-          <label for="contenido">Contenido</label>
-          <textarea
-            id="contenido"
-            name="contenido"
-            rows="5"
-            placeholder="Escribe el contenido..."
-            [(ngModel)]="form.contenido"
-          ></textarea>
+      <!-- ================= Detalle de un pedido ================= -->
+      @if (abierto(); as p) {
+        <div class="detalle">
+          <button type="button" class="volver" (click)="cerrar()">
+            &larr; Volver a la lista
+          </button>
 
-          <div class="botones">
-            <button type="submit" class="principal">
-              {{ editando() ? 'Guardar cambios' : 'Crear nota' }}
+          <div class="cabecera">
+            <div>
+              <h2>{{ p.folio }}</h2>
+              <span class="meta">
+                Solicitado el {{ p.creado_en | date: 'dd/MM/yyyy' }}
+              </span>
+            </div>
+            <span class="estado" [class]="colorEstado(p)">{{ p.estado_etiqueta }}</span>
+          </div>
+
+          <!-- ---------- Barra de avance ---------- -->
+          @if (!p.detenido) {
+            <div class="progreso">
+              <div class="barra">
+                <div class="relleno" [style.width.%]="p.progreso"></div>
+              </div>
+              <span class="porcentaje">{{ p.progreso }}% completado</span>
+            </div>
+
+            <ol class="pasos">
+              @for (paso of flujo; track paso) {
+                <li
+                  class="paso"
+                  [class.cumplido]="pasoCumplido(p, paso)"
+                  [class.actual]="pasoActual(p, paso)"
+                >
+                  <span class="marca">
+                    @if (pasoCumplido(p, paso)) { &#10003; } @else { &bull; }
+                  </span>
+                  <span class="nombre">{{ etiquetasFlujo[paso] }}</span>
+                </li>
+              }
+            </ol>
+          } @else {
+            <p class="aviso error">
+              Este proyecto se detuvo en estado "{{ p.estado_etiqueta }}".
+              @if (p.motivo_rechazo) {
+                <br /><strong>Motivo:</strong> {{ p.motivo_rechazo }}
+              }
+            </p>
+          }
+
+          <!-- ---------- Fechas y notas ---------- -->
+          <div class="bloques">
+            <div class="bloque">
+              <h3>Instalacion</h3>
+              <p class="dato"><strong>Direccion:</strong> {{ p.direccion_instalacion }}</p>
+              @if (p.ciudad) {
+                <p class="dato"><strong>Ciudad:</strong> {{ p.ciudad }}</p>
+              }
+              @if (p.telefono_contacto) {
+                <p class="dato"><strong>Contacto:</strong> {{ p.telefono_contacto }}</p>
+              }
+              @if (p.fecha_visita) {
+                <p class="dato destacado">
+                  <strong>Visita tecnica:</strong>
+                  {{ p.fecha_visita | date: 'EEEE d \'de\' MMMM \'de\' y' }}
+                </p>
+              }
+              @if (p.fecha_instalacion) {
+                <p class="dato destacado">
+                  <strong>Instalacion:</strong>
+                  {{ p.fecha_instalacion | date: 'EEEE d \'de\' MMMM \'de\' y' }}
+                </p>
+              }
+              @if (p.notas_admin) {
+                <p class="dato"><strong>Nota del tecnico:</strong> {{ p.notas_admin }}</p>
+              }
+            </div>
+
+            <div class="bloque">
+              <h3>Importe</h3>
+              <div class="renglon">
+                <span>Subtotal</span>
+                <span>{{ p.subtotal | currency: 'MXN':'$':'1.2-2' }}</span>
+              </div>
+              <div class="renglon">
+                <span>IVA</span>
+                <span>{{ p.iva | currency: 'MXN':'$':'1.2-2' }}</span>
+              </div>
+              <div class="renglon total">
+                <span>Total</span>
+                <span>{{ p.total | currency: 'MXN':'$':'1.2-2' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ---------- Partidas ---------- -->
+          @if (p.detalle?.length) {
+            <h3 class="seccion">Componentes del proyecto</h3>
+            <ul class="partidas">
+              @for (d of p.detalle; track d.id) {
+                <li>
+                  <span class="cant">{{ d.cantidad }}x</span>
+                  <span class="nombre">{{ d.nombre_producto }}</span>
+                  <span class="precio">{{ d.importe | currency: 'MXN':'$':'1.2-2' }}</span>
+                </li>
+              }
+            </ul>
+          }
+
+          <!-- ---------- Bitacora ---------- -->
+          @if (p.historial?.length) {
+            <h3 class="seccion">Historial del proyecto</h3>
+            <ul class="historial">
+              @for (h of p.historial; track h.id) {
+                <li>
+                  <span class="punto"></span>
+                  <div>
+                    <strong>{{ h.estado_etiqueta }}</strong>
+                    <span class="meta">{{ h.creado_en | date: 'dd/MM/yyyy HH:mm' }}</span>
+                    @if (h.comentario) {
+                      <p class="comentario">{{ h.comentario }}</p>
+                    }
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+
+          @if (puedeCancelar(p)) {
+            <button type="button" class="cancelar" (click)="cancelar(p)">
+              Cancelar esta solicitud
             </button>
+          }
+        </div>
+      }
 
-            @if (editando()) {
-              <button type="button" class="secundario" (click)="cancelar()">
-                Cancelar
-              </button>
+      <!-- ================= Lista de pedidos ================= -->
+      @if (!abierto()) {
+
+        @if (enProceso().length) {
+          <h3 class="seccion">En proceso</h3>
+          <div class="tarjetas">
+            @for (p of enProceso(); track p.id) {
+              <article
+                class="tarjeta"
+                role="button"
+                tabindex="0"
+                (click)="abrir(p)"
+                (keydown.enter)="abrir(p)"
+                (keydown.space)="abrir(p)"
+              >
+                <div class="fila">
+                  <strong>{{ p.folio }}</strong>
+                  <span class="estado" [class]="colorEstado(p)">{{ p.estado_etiqueta }}</span>
+                </div>
+
+                <div class="barra">
+                  <div class="relleno" [style.width.%]="p.progreso"></div>
+                </div>
+                <span class="meta">Paso {{ p.paso }} de {{ p.pasos_totales }}</span>
+
+                <div class="fila pie">
+                  <span class="meta">
+                    {{ p.partidas }} componente(s) &middot;
+                    {{ p.creado_en | date: 'dd/MM/yyyy' }}
+                  </span>
+                  <span class="importe">{{ p.total | currency: 'MXN':'$':'1.2-2' }}</span>
+                </div>
+
+                @if (p.fecha_instalacion) {
+                  <p class="cita">
+                    Instalacion: {{ p.fecha_instalacion | date: 'dd/MM/yyyy' }}
+                  </p>
+                } @else if (p.fecha_visita) {
+                  <p class="cita">
+                    Visita tecnica: {{ p.fecha_visita | date: 'dd/MM/yyyy' }}
+                  </p>
+                }
+              </article>
             }
           </div>
-        </form>
-      </div>
+        }
 
-    </div>
+        @if (cerrados().length) {
+          <h3 class="seccion">Cerrados</h3>
+          <div class="tarjetas">
+            @for (p of cerrados(); track p.id) {
+              <article
+                class="tarjeta apagada"
+                role="button"
+                tabindex="0"
+                (click)="abrir(p)"
+                (keydown.enter)="abrir(p)"
+                (keydown.space)="abrir(p)"
+              >
+                <div class="fila">
+                  <strong>{{ p.folio }}</strong>
+                  <span class="estado" [class]="colorEstado(p)">{{ p.estado_etiqueta }}</span>
+                </div>
+                <div class="fila pie">
+                  <span class="meta">{{ p.creado_en | date: 'dd/MM/yyyy' }}</span>
+                  <span class="importe">{{ p.total | currency: 'MXN':'$':'1.2-2' }}</span>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      }
+    }
   </div>
 </ion-content>

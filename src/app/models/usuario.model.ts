@@ -9,11 +9,22 @@ export interface Usuario {
   username: string;
   email: string;
   full_name: string;
+  /**
+   * 'cliente' arma solicitudes y ve las suyas.
+   * 'admin' ve todas, las aprueba, las rechaza y fija fechas.
+   *
+   * Es lo unico que decide que pestanas ve cada quien.
+   */
+  rol: RolUsuario;
+  telefono: string | null;
+  direccion: string | null;
   /** 1 = activo, 0 = dado de baja (baja logica, el registro no se borra). */
   activo: number;
   creado_en: string;
   actualizado_en: string;
 }
+
+export type RolUsuario = 'cliente' | 'admin';
 
 /**
  * Lo que se manda al crear un usuario (POST).
@@ -25,7 +36,7 @@ export interface Usuario {
  */
 export type NuevoUsuario = Pick<Usuario, 'username' | 'email' | 'full_name'> & {
   password: string;
-};
+} & Partial<Pick<Usuario, 'telefono' | 'direccion'>>;
 
 /**
  * Lo que exige un PUT. Reemplaza el registro completo, por eso pide todos

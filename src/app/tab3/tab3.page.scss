@@ -1,35 +1,32 @@
 @use "sass:color";
 
-// Se usa color.adjust / color.scale en vez de lighten() y darken(),
-// que estan deprecados en Sass moderno y llenan la consola de avisos.
+// Misma paleta y convenciones que el resto de la aplicacion.
 $fuente-principal: 'Roboto', sans-serif;
 $color-principal: #455a64;
+$acento: #e08a1e;
 $bk1: 700px;
 
 $claro-50: color.adjust($color-principal, $lightness: 50%);
+$claro-55: color.adjust($color-principal, $lightness: 55%);
 $claro-60: color.adjust($color-principal, $lightness: 60%);
 $oscuro-15: color.adjust($color-principal, $lightness: -15%);
 
 ion-content {
   --background: #fff;
-  // Ionic inyecta --ion-text-color por variable CSS; hay que fijarla aqui
-  // o el texto hereda el color del tema (casi blanco en fondo claro).
   --color: #{$color-principal};
   font-family: $fuente-principal;
   color: $color-principal;
   line-height: 1.5;
 }
 
-// El tema de Ionic pinta encabezados y labels con su propio color,
-// asi que se fuerza el color heredado en todo el bloque del CRUD.
 .contenedor,
 .contenedor h1,
 .contenedor h3,
 .contenedor label,
 .contenedor strong,
 .contenedor li,
-.contenedor span:not(.estado):not(.nombre-empresa),
-.contenedor p:not(.aviso) {
+.contenedor span:not(.nombre-empresa):not(.importe),
+.contenedor p:not(.aviso):not(.aviso-sugerencia) {
   color: $color-principal;
 }
 
@@ -42,12 +39,20 @@ ion-content {
 
 .logo {
   text-align: center;
-  margin-bottom: 1rem;
-  font-size: 1.6rem;
+  margin-bottom: 0.3rem;
+  font-size: 1.7rem;
 }
 
 .nombre-empresa {
-  color: $oscuro-15;
+  color: $acento;
+}
+
+.leyenda {
+  text-align: center;
+  font-size: 0.85rem;
+  margin: 0 auto 1.2rem;
+  max-width: 560px;
+  opacity: 0.85;
 }
 
 .wrapper {
@@ -57,234 +62,278 @@ ion-content {
 
   @media screen and (min-width: $bk1) {
     display: grid;
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: 1.3fr 1fr;
     align-items: stretch;
   }
 }
 
-// ---------------- Panel izquierdo: lista ----------------
-.info-empresa {
+// ---------------- Panel izquierdo: lineas ----------------
+.panel-lista {
   padding: 1rem;
   background-color: $claro-50;
 
   h3 {
-    text-align: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.6rem;
+  }
+}
 
-    @media screen and (min-width: $bk1) {
-      text-align: left;
+.contador {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: normal;
+  opacity: 0.8;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.linea {
+  align-items: flex-start;
+  background-color: #fff;
+  border-radius: 4px;
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+  padding: 0.6rem;
+
+  .miniatura {
+    background-color: $claro-55;
+    border-radius: 3px;
+    flex-shrink: 0;
+    height: 58px;
+    overflow: hidden;
+    width: 58px;
+
+    img {
+      display: block;
+      height: 100%;
+      object-fit: cover;
+      width: 100%;
     }
   }
-}
 
-.servicios {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 1rem;
-  text-align: center;
-
-  @media screen and (min-width: $bk1) {
-    text-align: left;
+  .datos {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;   // permite que el texto largo se recorte sin desbordar
   }
-}
-
-.usuario {
-  padding: 0.6rem 0;
-  border-bottom: 1px solid rgba($color-principal, 0.2);
-
-  &:last-of-type {
-    border-bottom: none;
-  }
-
-  &.seleccionado {
-    background-color: rgba(#fff, 0.55);
-    border-radius: 4px;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-  }
-}
-
-.datos {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.3;
 
   strong {
-    font-size: 0.95rem;
-  }
-}
-
-.meta {
-  font-size: 0.78rem;
-  opacity: 0.75;
-  word-break: break-all;
-}
-
-.estado {
-  align-self: center;
-  margin-top: 0.2rem;
-  font-size: 0.7rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  color: #1b7f4b;
-
-  &.inactivo {
-    color: #b3261e;
+    font-size: 0.9rem;
   }
 
-  @media screen and (min-width: $bk1) {
-    align-self: flex-start;
+  .meta {
+    font-size: 0.72rem;
+    opacity: 0.75;
+  }
+
+  .importe {
+    color: $acento !important;
+    font-size: 0.92rem;
+    font-weight: bold;
+    white-space: nowrap;
   }
 }
 
 .acciones {
+  align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
-  justify-content: center;
+  gap: 0.3rem;
   margin-top: 0.45rem;
+}
 
-  @media screen and (min-width: $bk1) {
-    justify-content: flex-start;
+.paso {
+  background-color: $claro-55;
+  border: 1px solid rgba($color-principal, 0.3);
+  border-radius: 3px;
+  color: $color-principal;
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0.2rem 0.5rem;
+
+  &:hover {
+    background-color: $claro-50;
   }
+}
+
+.numero {
+  font-size: 0.85rem;
+  font-weight: bold;
+  min-width: 1.5rem;
+  text-align: center;
 }
 
 .mini {
-  background-color: #fff;
+  background-color: $claro-60;
   border: 1px solid rgba($color-principal, 0.35);
-  border-radius: 4px;
+  border-radius: 3px;
   color: $color-principal;
   cursor: pointer;
-  font: inherit;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+
+  &:hover {
+    background-color: #fff;
+  }
+
+  &.peligro {
+    border-color: rgba(#b3261e, 0.45);
+    color: #8c1d18;
+  }
+}
+
+.vaciar {
+  background: none;
+  border: 1px solid rgba(#b3261e, 0.45);
+  border-radius: 3px;
+  color: #8c1d18;
+  cursor: pointer;
+  display: block;
   font-size: 0.75rem;
-  padding: 0.25rem 0.55rem;
-
-  &:hover:not(:disabled),
-  &:focus:not(:disabled) {
-    background-color: $color-principal;
-    color: #fff;
-    outline: 0;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-
-  &.borrar:hover,
-  &.borrar:focus {
-    background-color: #b3261e;
-    border-color: #b3261e;
-  }
-}
-
-.recargar {
-  width: 100%;
-}
-
-.vacio {
-  font-size: 0.85rem;
-  opacity: 0.75;
-  text-align: center;
-  margin-bottom: 0.5rem;
+  margin: 0.8rem auto 0;
+  padding: 0.3rem 0.8rem;
 }
 
 // ---------------- Panel derecho: formulario ----------------
-.contacto {
+.panel-form {
   padding: 1rem;
-  background-color: $claro-60;
 
   h3 {
-    margin-bottom: 1rem;
-  }
-}
-
-.formulario {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-gap: 1.25rem;
-
-  p {
-    margin: 0;
+    margin-bottom: 0.7rem;
   }
 
   label {
     display: block;
-    font-size: 0.85rem;
-    margin-bottom: 0.25rem;
+    font-size: 0.8rem;
+    margin-bottom: 0.2rem;
+    margin-top: 0.6rem;
   }
 
-  button,
   input,
-  select {
-    width: 100%;
-    padding: 1rem;
-    border: 1px solid $claro-50;
-    border-radius: 4px;
-    font: inherit;
-    color: $color-principal;
+  textarea {
     background-color: #fff;
+    border: 1px solid rgba($color-principal, 0.4);
+    border-radius: 3px;
     box-sizing: border-box;
+    color: $color-principal;
+    font-family: $fuente-principal;
+    font-size: 0.88rem;
+    padding: 0.45rem 0.55rem;
+    width: 100%;
+
+    &:focus {
+      border-color: $acento;
+      outline: none;
+    }
   }
 
-  // En pantallas chicas cada campo ocupa el ancho completo
-  @media screen and (max-width: #{$bk1 - 1px}) {
-    grid-template-columns: 1fr;
-  }
-}
-
-.pista {
-  font-weight: normal;
-  font-size: 0.72rem;
-  opacity: 0.7;
-}
-
-.full {
-  grid-column: 1 / 3;
-
-  @media screen and (max-width: #{$bk1 - 1px}) {
-    grid-column: 1 / 2;
+  textarea {
+    resize: vertical;
   }
 }
 
-.acciones-form {
+// ---------------- Totales ----------------
+.totales {
+  border-top: 1px solid rgba($color-principal, 0.2);
+  margin-top: 1rem;
+  padding-top: 0.7rem;
+}
+
+.renglon {
   display: flex;
-  gap: 0.75rem;
+  font-size: 0.85rem;
+  justify-content: space-between;
+  padding: 0.18rem 0;
+
+  &.total {
+    border-top: 1px solid rgba($color-principal, 0.2);
+    font-size: 1rem;
+    font-weight: bold;
+    margin-top: 0.35rem;
+    padding-top: 0.45rem;
+
+    span:last-child {
+      color: $acento !important;
+    }
+  }
 }
 
-.boton-enviar {
-  background-color: $claro-50;
-  border: none;
-  border-radius: 5px;
-  text-transform: uppercase;
-  font-weight: bold;
-  cursor: pointer;
+.nota-precio {
+  font-size: 0.72rem;
+  font-style: italic;
+  margin-top: 0.5rem;
+  opacity: 0.8;
+}
 
-  &:focus,
-  &:hover {
-    background-color: $color-principal;
-    color: #fff;
-    outline: 0;
-    transition: background-color 2s ease-out;
+// ---------------- Botones ----------------
+.principal {
+  background-color: $color-principal;
+  border: 1px solid $color-principal;
+  border-radius: 3px;
+  color: #fff;
+  cursor: pointer;
+  font-family: $fuente-principal;
+  font-size: 0.9rem;
+  padding: 0.55rem 1.2rem;
+
+  &:hover:not(:disabled) {
+    background-color: $oscuro-15;
   }
 
   &:disabled {
-    opacity: 0.6;
-    cursor: default;
+    background-color: $claro-50;
+    border-color: $claro-50;
+    color: rgba($color-principal, 0.6);
+    cursor: not-allowed;
   }
 
-  &.cancelar {
-    background-color: transparent;
-    border: 1px solid rgba($color-principal, 0.4);
+  &.ancho {
+    display: block;
+    margin-top: 1rem;
+    width: 100%;
   }
 }
 
-// ---------------- Avisos ----------------
+.enlace {
+  background: none;
+  border: none;
+  color: $acento;
+  cursor: pointer;
+  font-family: $fuente-principal;
+  font-size: 0.85rem;
+  padding: 0;
+  text-decoration: underline;
+}
+
+// ---------------- Estados vacios y avisos ----------------
+.vacio-estado {
+  padding: 2rem 0;
+  text-align: center;
+}
+
+.vacio {
+  font-size: 0.9rem;
+  font-style: italic;
+  opacity: 0.8;
+  padding: 0.8rem 0;
+  text-align: center;
+}
+
 .aviso {
   border-radius: 4px;
   font-size: 0.85rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
   padding: 0.65rem 0.8rem;
+
+  p {
+    margin: 0;
+  }
 
   &.error {
     background-color: #fdecea;
@@ -296,16 +345,20 @@ ion-content {
     background-color: #e6f4ea;
     border-left: 4px solid #1b7f4b;
     color: #10603a;
+
+    p {
+      color: #10603a;
+    }
   }
 }
 
-// Datos servidos desde el almacenamiento del dispositivo (sin conexion).
-.aviso-cache {
+// Sugerencias de composicion del proyecto: informan, no bloquean.
+.aviso-sugerencia {
   background-color: #fff4e5;
   border-left: 4px solid #b26a00;
   border-radius: 4px;
   color: #8a5300;
-  font-size: 0.8rem;
-  margin-bottom: 0.9rem;
-  padding: 0.55rem 0.7rem;
+  font-size: 0.78rem;
+  margin: 0.7rem 0 0;
+  padding: 0.5rem 0.65rem;
 }

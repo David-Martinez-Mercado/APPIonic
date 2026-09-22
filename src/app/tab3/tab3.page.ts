@@ -1,256 +1,221 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
-import { UsuarioRepository } from '../services/usuario.repository';
+import { CarritoRepository } from '../services/carrito.repository';
+import { PedidoRepository } from '../services/pedido.repository';
+import { SesionService } from '../services/sesion.service';
 import {
   ApiError,
-  Usuario,
-  CambiosUsuario,
-  FormularioUsuario,
-  FORM_VACIO,
+  ItemCarrito,
+  DatosSolicitud,
+  SOLICITUD_VACIA,
 } from '../models';
 
+/**
+ * Carrito y envio de la solicitud.
+ *
+ * El carrito vive en el dispositivo: se arma sin conexion y sobrevive
+ * al cierre de la aplicacion. Solo al pulsar "Enviar solicitud" se
+ * convierte en un pedido del servidor.
+ */
 @Component({
   selector: 'app-tab3',
   templateUrl: 'tab3.page.html',
   styleUrls: ['tab3.page.scss'],
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent, FormsModule, DatePipe],
+  imports: [
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonContent,
+    FormsModule,
+    CurrencyPipe,
+  ],
 })
 export class Tab3Page implements OnInit {
-  private repo = inject(UsuarioRepository);
+  private carrito = inject(CarritoRepository);
+  private pedidos = inject(PedidoRepository);
+  private sesion = inject(SesionService);
+  private router = inject(Router);
 
-  /** La lista vive en el repositorio; la vista solo la lee. */
-  usuarios = this.repo.usuarios;
+  /** El carrito vive en el repositorio; la vista solo lo lee. */
+  items = this.carrito.items;
+  totales = this.carrito.totales;
+  vacio = this.carrito.vacio;
+  cargado = this.carrito.cargado;
 
-  /** true cuando lo mostrado salio del dispositivo y no del servidor. */
-  desdeCache = this.repo.desdeCache;
-
-  /** Fecha ISO de la ultima sincronizacion correcta con la API. */
-  sincronizado = this.repo.sincronizado;
+  usuario = this.sesion.usuario;
+  autenticado = this.sesion.autenticado;
 
   // Signals: la app es zoneless, axios responde fuera de Angular.
-  cargando = signal(false);
+  enviando = signal(false);
   mensajeError = signal('');
   mensajeOk = signal('');
 
-  /** null = creando (POST). Un id = editando ese usuario. */
-  editandoId = signal<number | null>(null);
+  /** Folio de la solicitud recien creada, para el mensaje de exito. */
+  folioCreado = signal<string | null>(null);
+
+  form: DatosSolicitud = { ...SOLICITUD_VACIA };
 
   /**
-   * PUT reemplaza el registro completo y exige todos los campos.
-   * PATCH manda solo lo que cambio. Al crear siempre es POST.
-   */
-  metodoEdicion = signal<'PATCH' | 'PUT'>('PATCH');
-
-  form: FormularioUsuario = { ...FORM_VACIO };
-
-  /** Copia de como estaba el usuario al empezar a editar, para el PATCH. */
-  private original: Usuario | null = null;
-
-  editando = computed(() => this.editandoId() !== null);
-
-  /**
-   * Primero pinta lo que haya en el dispositivo y luego pide al servidor.
+   * Un proyecto solar sin paneles no tiene sentido.
    *
-   * Asi la lista aparece de inmediato al abrir la aplicacion aunque la red
-   * tarde, y si el servidor esta caido la vista conserva los ultimos datos
-   * conocidos en lugar de quedarse vacia.
+   * No se bloquea el envio por esto: se avisa, porque puede que el
+   * cliente solo quiera cotizar una bateria extra para un sistema que
+   * ya tiene instalado.
    */
+  sinPaneles = computed(
+    () => !this.vacio() && !this.items().some((i) => i.categoria === 'panel'),
+  );
+
+  /** Aviso equivalente para la instalacion. */
+  sinInstalacion = computed(
+    () => !this.vacio() && !this.items().some((i) => i.categoria === 'instalacion'),
+  );
+
   async ngOnInit() {
-    await this.repo.cargarCache();
-    await this.cargar();
-  }
-
-  // ------------------------------------------------------------
-  //  READ
-  // ------------------------------------------------------------
-  async cargar() {
-    this.cargando.set(true);
-    this.mensajeError.set('');
-    try {
-      await this.repo.listar();
-    } catch (e) {
-      // El repositorio ya dejo cargada la cache del dispositivo; solo se
-      // avisa de que lo que se ve puede estar desactualizado.
-      this.mostrarError(e);
-    } finally {
-      this.cargando.set(false);
+    // El carrito ya se cargo en la barra de pestanas al arrancar, pero
+    // se vuelve a leer por si se entra directo a esta ruta.
+    if (!this.cargado()) {
+      await this.carrito.cargar();
     }
+    // La sesion decide si se puede enviar la solicitud y precarga la
+    // direccion del cliente, asi que hay que esperarla.
+    await this.sesion.listo();
+    this.precargarDatosDelUsuario();
   }
 
   // ------------------------------------------------------------
-  //  CREATE / UPDATE  (POST, PUT o PATCH segun el estado)
+  //  Edicion de las lineas
   // ------------------------------------------------------------
-  async guardar() {
-    if (this.cargando()) {
+
+  async incrementar(item: ItemCarrito) {
+    this.limpiarMensajes();
+    await this.carrito.incrementar(item.producto_id);
+  }
+
+  async decrementar(item: ItemCarrito) {
+    this.limpiarMensajes();
+    await this.carrito.decrementar(item.producto_id);
+  }
+
+  async eliminar(item: ItemCarrito) {
+    if (!confirm(`Quitar "${item.nombre}" del carrito?`)) {
       return;
+    }
+    this.limpiarMensajes();
+    await this.carrito.eliminar(item.producto_id);
+  }
+
+  async vaciar() {
+    if (this.vacio()) {
+      return;
+    }
+    if (!confirm('Vaciar todo el carrito?')) {
+      return;
+    }
+    this.limpiarMensajes();
+    await this.carrito.vaciar();
+  }
+
+  irAlCatalogo() {
+    this.router.navigateByUrl('/tabs/tab2');
+  }
+
+  irAMisPedidos() {
+    this.router.navigateByUrl('/tabs/tab4');
+  }
+
+  irAAcceder() {
+    this.router.navigateByUrl('/tabs/tab1');
+  }
+
+  // ------------------------------------------------------------
+  //  Envio de la solicitud
+  // ------------------------------------------------------------
+
+  async enviar() {
+    if (this.enviando()) {
+      return; // evita doble envio si dan doble clic
     }
 
     this.limpiarMensajes();
 
-    const id = this.editandoId();
-
-    // Validacion minima en el cliente; el PHP valida de todos modos
-    if (!this.form.username.trim() || !this.form.email.trim() || !this.form.full_name.trim()) {
-      this.mensajeError.set('Usuario, correo y nombre completo son obligatorios.');
+    const usuario = this.usuario();
+    if (!usuario) {
+      this.mensajeError.set('Inicia sesion para enviar tu solicitud.');
       return;
     }
-    if (id === null && !this.form.password.trim()) {
-      this.mensajeError.set('La contrasena es obligatoria al crear un usuario.');
+    if (this.vacio()) {
+      this.mensajeError.set('El carrito esta vacio.');
+      return;
+    }
+    if (!this.form.direccion_instalacion.trim()) {
+      this.mensajeError.set('La direccion de instalacion es obligatoria.');
       return;
     }
 
-    this.cargando.set(true);
+    this.enviando.set(true);
     try {
-      if (id === null) {
-        // ---------- POST ----------
-        await this.repo.crear({
-          username: this.form.username.trim(),
-          email: this.form.email.trim(),
-          full_name: this.form.full_name.trim(),
-          password: this.form.password,
-        });
-        this.mensajeOk.set('Usuario creado correctamente (POST 201).');
+      const pedido = await this.pedidos.crear({
+        usuario_id: usuario.id,
+        direccion_instalacion: this.form.direccion_instalacion.trim(),
+        ciudad: this.form.ciudad.trim() || undefined,
+        telefono_contacto: this.form.telefono_contacto.trim() || undefined,
+        notas_cliente: this.form.notas_cliente.trim() || undefined,
+        items: this.carrito.aItemsPedido(),
+      });
 
-      } else if (this.metodoEdicion() === 'PUT') {
-        // ---------- PUT: reemplaza todo, exige password ----------
-        if (!this.form.password.trim()) {
-          this.mensajeError.set('PUT reemplaza el registro completo, por lo que la contrasena es obligatoria. Usa PATCH para no cambiarla.');
-          this.cargando.set(false);
-          return;
-        }
-        await this.repo.reemplazar(id, {
-          username: this.form.username.trim(),
-          email: this.form.email.trim(),
-          full_name: this.form.full_name.trim(),
-          password: this.form.password,
-          activo: Number(this.form.activo),
-        });
-        this.mensajeOk.set('Usuario reemplazado correctamente (PUT 200).');
+      // El carrito solo se vacia si el servidor confirmo: si fallara y
+      // se hubiera vaciado antes, el cliente perderia su seleccion.
+      await this.carrito.vaciar();
 
-      } else {
-        // ---------- PATCH: solo lo que cambio ----------
-        const cambios = this.calcularCambios();
-
-        if (!Object.keys(cambios).length) {
-          this.mensajeError.set('No cambiaste ningun campo.');
-          this.cargando.set(false);
-          return;
-        }
-        await this.repo.actualizar(id, cambios);
-        this.mensajeOk.set(
-          `Usuario actualizado (PATCH 200). Campos enviados: ${Object.keys(cambios).join(', ')}.`,
-        );
-      }
-
-      this.cancelar();
-    } catch (e) {
-      this.mostrarError(e);
-    } finally {
-      this.cargando.set(false);
-    }
-  }
-
-  /** Compara el formulario contra el original: eso es lo que hace util al PATCH. */
-  private calcularCambios(): CambiosUsuario {
-    const cambios: CambiosUsuario = {};
-    const o = this.original;
-
-    if (!o) {
-      return cambios;
-    }
-    if (this.form.username.trim() !== o.username) {
-      cambios.username = this.form.username.trim();
-    }
-    if (this.form.email.trim() !== o.email) {
-      cambios.email = this.form.email.trim();
-    }
-    if (this.form.full_name.trim() !== o.full_name) {
-      cambios.full_name = this.form.full_name.trim();
-    }
-    if (Number(this.form.activo) !== o.activo) {
-      cambios.activo = Number(this.form.activo);
-    }
-    // La contrasena solo viaja si el usuario escribio una nueva
-    if (this.form.password.trim()) {
-      cambios.password = this.form.password;
-    }
-    return cambios;
-  }
-
-  // ------------------------------------------------------------
-  //  Preparar edicion
-  // ------------------------------------------------------------
-  editar(u: Usuario) {
-    this.limpiarMensajes();
-    this.editandoId.set(u.id);
-    this.original = u;
-    this.form = {
-      username: u.username,
-      email: u.email,
-      full_name: u.full_name,
-      password: '', // vacio = no se cambia
-      activo: u.activo,
-    };
-  }
-
-  cancelar() {
-    this.editandoId.set(null);
-    this.original = null;
-    this.form = { ...FORM_VACIO };
-  }
-
-  // ------------------------------------------------------------
-  //  DELETE
-  // ------------------------------------------------------------
-  async eliminar(u: Usuario) {
-    if (this.cargando()) {
-      return;
-    }
-    if (!confirm(`Eliminar a "${u.full_name}"? Esta accion no se puede deshacer.`)) {
-      return;
-    }
-
-    this.limpiarMensajes();
-    this.cargando.set(true);
-    try {
-      await this.repo.eliminar(u.id);
-      this.mensajeOk.set('Usuario eliminado correctamente (DELETE 200).');
-
-      if (this.editandoId() === u.id) {
-        this.cancelar();
-      }
-    } catch (e) {
-      this.mostrarError(e);
-    } finally {
-      this.cargando.set(false);
-    }
-  }
-
-  /** Activa/desactiva con PATCH: el caso mas claro de actualizacion parcial. */
-  async alternarActivo(u: Usuario) {
-    if (this.cargando()) {
-      return;
-    }
-    this.limpiarMensajes();
-    this.cargando.set(true);
-    try {
-      const nuevo = u.activo === 1 ? 0 : 1;
-      await this.repo.actualizar(u.id, { activo: nuevo });
+      this.folioCreado.set(pedido.folio);
       this.mensajeOk.set(
-        `Usuario ${nuevo === 1 ? 'activado' : 'desactivado'} (PATCH 200, solo se envio "activo").`,
+        `Solicitud ${pedido.folio} enviada. Un asesor la revisara y te contactara.`,
       );
+      this.form = { ...SOLICITUD_VACIA };
+      this.precargarDatosDelUsuario();
     } catch (e) {
       this.mostrarError(e);
     } finally {
-      this.cargando.set(false);
+      this.enviando.set(false);
     }
   }
 
   // ------------------------------------------------------------
   //  Utilidades
   // ------------------------------------------------------------
+
+  /** Importe de una linea. */
+  importe(item: ItemCarrito): number {
+    return item.precio * item.cantidad;
+  }
+
+  imagenFallo(evento: Event) {
+    (evento.target as HTMLImageElement).style.display = 'none';
+  }
+
+  /**
+   * Rellena el formulario con lo que ya sabemos del cliente.
+   *
+   * Se copian los datos de su cuenta como punto de partida; si la
+   * instalacion es en otro domicilio, los puede cambiar.
+   */
+  private precargarDatosDelUsuario() {
+    const u = this.usuario();
+    if (!u) {
+      return;
+    }
+    if (!this.form.direccion_instalacion && u.direccion) {
+      this.form.direccion_instalacion = u.direccion;
+    }
+    if (!this.form.telefono_contacto && u.telefono) {
+      this.form.telefono_contacto = u.telefono;
+    }
+  }
+
   private mostrarError(e: unknown) {
     const msg = e instanceof ApiError ? e.message : 'Ocurrio un error inesperado.';
     const codigo = e instanceof ApiError && e.codigo ? ` (codigo ${e.codigo})` : '';
@@ -260,5 +225,6 @@ export class Tab3Page implements OnInit {
   private limpiarMensajes() {
     this.mensajeError.set('');
     this.mensajeOk.set('');
+    this.folioCreado.set(null);
   }
 }

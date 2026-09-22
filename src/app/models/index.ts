@@ -5,6 +5,7 @@
  * en lugar de una linea por archivo.
  */
 export * from './usuario.model';
-export * from './foto.model';
-export * from './nota.model';
+export * from './producto.model';
+export * from './pedido.model';
+export * from './carrito.model';
 export * from './respuesta-api.model';

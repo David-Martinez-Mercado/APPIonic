@@ -1,31 +1,153 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title> Photo Gallery </ion-title>
+    <ion-title>Catalogo</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
   <ion-header collapse="condense">
     <ion-toolbar>
-      <ion-title size="large">Photo Gallery</ion-title>
+      <ion-title size="large">Catalogo</ion-title>
     </ion-toolbar>
   </ion-header>
 
-  <ion-grid>
-    <ion-row>
-      @for (photo of photoService.photos(); track photo.filepath; let position = $index) {
-      <ion-col size="6">
-        <button (click)="showActionSheet(photo, position)">
-          <img [src]="photo.webviewPath" [attr.alt]="'Photo ' + (position + 1)" loading="lazy" />
-        </button>
-      </ion-col>
-      }
-    </ion-row>
-  </ion-grid>
+  <div class="contenedor">
+    <h1 class="logo"><span class="nombre-empresa">Solar</span> Durango</h1>
+    <p class="leyenda">
+      Paneles, estructuras, baterias e inversores con instalacion incluida.
+      Arma tu proyecto y enviamos a un tecnico a revisarlo.
+    </p>
 
-  <ion-fab vertical="bottom" horizontal="center" slot="fixed">
-    <ion-fab-button (click)="addPhotoToGallery()">
-      <ion-icon name="camera"></ion-icon>
-    </ion-fab-button>
-  </ion-fab>
+    <!-- Aviso de datos locales: el servidor no respondio. -->
+    @if (desdeCache() && productos().length) {
+      <p class="aviso-cache">
+        Sin conexion con el servidor. Mostrando el catalogo guardado en el
+        dispositivo@if (sincronizado()) { (ultima sincronizacion:
+        {{ sincronizado() | date: 'dd/MM/yyyy HH:mm' }})}.
+      </p>
+    }
+
+    @if (mensajeError()) {
+      <p class="aviso error">{{ mensajeError() }}</p>
+    }
+    @if (mensajeOk()) {
+      <p class="aviso ok">{{ mensajeOk() }}</p>
+    }
+
+    <!-- ================= Filtros ================= -->
+    <div class="filtros">
+      <input
+        type="search"
+        class="buscador"
+        placeholder="Buscar por nombre o clave..."
+        [ngModel]="busqueda()"
+        (ngModelChange)="busqueda.set($event)"
+        name="busqueda"
+      />
+
+      <div class="categorias">
+        <button
+          type="button"
+          class="chip"
+          [class.activo]="categoriaActiva() === null"
+          (click)="filtrarPor(null)"
+        >
+          Todo
+        </button>
+
+        @for (c of categorias; track c.valor) {
+          <button
+            type="button"
+            class="chip"
+            [class.activo]="categoriaActiva() === c.valor"
+            (click)="filtrarPor(c.valor)"
+          >
+            {{ c.etiqueta }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (cargando() && !productos().length) {
+      <p class="vacio">Cargando catalogo...</p>
+    }
+
+    @if (!cargando() && !visibles().length) {
+      <p class="vacio">
+        No hay productos que coincidan.
+        <button type="button" class="enlace" (click)="limpiarBusqueda()">
+          Ver todo el catalogo
+        </button>
+      </p>
+    }
+
+    @if (visibles().length) {
+      <p class="contador">
+        Mostrando {{ visibles().length }} de {{ totalCatalogo() }} producto(s)
+      </p>
+    }
+
+    <!-- ================= Rejilla de productos ================= -->
+    <div class="rejilla">
+      @for (p of visibles(); track p.id) {
+        <article class="producto">
+          <div class="imagen">
+            @if (p.imagen_url) {
+              <img [src]="p.imagen_url" [alt]="p.nombre" (error)="imagenFallo($event)" />
+            }
+            <span class="etiqueta-categoria">{{ etiquetaCategoria(p.categoria) }}</span>
+          </div>
+
+          <div class="datos">
+            <h3>{{ p.nombre }}</h3>
+            <span class="sku">{{ p.sku }}</span>
+
+            @if (p.descripcion) {
+              <p class="descripcion">{{ p.descripcion }}</p>
+            }
+
+            <div class="specs">
+              @if (p.potencia_w) {
+                <span class="spec">{{ p.potencia_w }} W</span>
+              }
+              <span class="spec">Por {{ p.unidad }}</span>
+              @if (p.stock > 0) {
+                <span class="spec stock">{{ p.stock }} disponibles</span>
+              } @else {
+                <span class="spec agotado">Agotado</span>
+              }
+            </div>
+
+            <div class="pie">
+              <span class="precio">{{ p.precio | currency: 'MXN':'$':'1.2-2' }}</span>
+
+              @if (enCarrito(p)) {
+                <div class="cantidad">
+                  <button type="button" class="paso" (click)="quitar(p)">-</button>
+                  <span class="numero">{{ enCarrito(p) }}</span>
+                  <button
+                    type="button"
+                    class="paso"
+                    [disabled]="enCarrito(p) >= p.stock"
+                    (click)="agregar(p)"
+                  >
+                    +
+                  </button>
+                </div>
+              } @else {
+                <button
+                  type="button"
+                  class="agregar"
+                  [disabled]="p.stock < 1"
+                  (click)="agregar(p)"
+                >
+                  Agregar
+                </button>
+              }
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+  </div>
 </ion-content>

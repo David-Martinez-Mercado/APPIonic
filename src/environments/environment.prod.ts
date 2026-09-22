@@ -1,6 +1,10 @@
+/** Host de la API en produccion. Ver las notas de environment.ts. */
+const HOST = 'http://localhost';
+
 export const environment = {
   production: true,
 
-  /** En produccion la API deberia ir por HTTPS y con un dominio real. */
-  apiUrl: 'http://localhost/api/usuarios.php',
+  apiUrl: `${HOST}/api/usuarios.php`,
+  productosUrl: `${HOST}/api/productos.php`,
+  pedidosUrl: `${HOST}/api/pedidos.php`,
 };

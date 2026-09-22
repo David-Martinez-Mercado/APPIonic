@@ -1,0 +1,317 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Administracion</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Administracion</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="contenedor">
+    <h1 class="logo">Gestion de <span class="nombre-empresa">proyectos</span></h1>
+
+    <!-- ================= Sin permisos ================= -->
+    @if (!esAdmin()) {
+      <div class="vacio-estado">
+        <p class="vacio">Esta seccion es solo para administradores.</p>
+        <button type="button" class="principal" (click)="irAAcceder()">
+          Iniciar sesion
+        </button>
+      </div>
+    }
+
+    @if (esAdmin()) {
+
+      @if (mensajeError()) {
+        <p class="aviso error">{{ mensajeError() }}</p>
+      }
+      @if (mensajeOk()) {
+        <p class="aviso ok">{{ mensajeOk() }}</p>
+      }
+
+      <!-- ================= Resumen ================= -->
+      <div class="resumen">
+        <div class="dato-resumen">
+          <span class="cifra">{{ nuevas() }}</span>
+          <span class="etiqueta">Nuevas por revisar</span>
+        </div>
+        <div class="dato-resumen">
+          <span class="cifra">{{ pedidos().length }}</span>
+          <span class="etiqueta">Solicitudes listadas</span>
+        </div>
+        <div class="dato-resumen">
+          <span class="cifra monto">
+            {{ montoActivo() | currency: 'MXN':'$':'1.0-0' }}
+          </span>
+          <span class="etiqueta">En proyectos activos</span>
+        </div>
+      </div>
+
+      <!-- ================= Filtros ================= -->
+      <div class="categorias">
+        @for (f of filtros; track f.etiqueta) {
+          <button
+            type="button"
+            class="chip"
+            [class.activo]="filtro() === f.valor"
+            (click)="filtrarPor(f.valor)"
+          >
+            {{ f.etiqueta }}
+          </button>
+        }
+      </div>
+
+      @if (cargando() && !pedidos().length) {
+        <p class="vacio">Cargando solicitudes...</p>
+      }
+
+      @if (!cargando() && !pedidos().length) {
+        <p class="vacio">No hay solicitudes con ese filtro.</p>
+      }
+
+      <!-- ================= Detalle y gestion ================= -->
+      @if (abierto(); as p) {
+        <div class="detalle">
+          <button type="button" class="volver" (click)="cerrar()">
+            &larr; Volver a la lista
+          </button>
+
+          <div class="cabecera">
+            <div>
+              <h2>{{ p.folio }}</h2>
+              <span class="meta">
+                {{ p.cliente_nombre }} &middot; {{ p.cliente_email }}
+              </span>
+              <span class="meta">
+                Solicitado el {{ p.creado_en | date: 'dd/MM/yyyy HH:mm' }}
+              </span>
+            </div>
+            <span class="estado" [class]="colorEstado(p)">{{ p.estado_etiqueta }}</span>
+          </div>
+
+          <div class="bloques">
+            <!-- ---------- Datos del proyecto ---------- -->
+            <div class="bloque">
+              <h3>Sitio de instalacion</h3>
+              <p class="dato"><strong>Direccion:</strong> {{ p.direccion_instalacion }}</p>
+              @if (p.ciudad) {
+                <p class="dato"><strong>Ciudad:</strong> {{ p.ciudad }}</p>
+              }
+              @if (p.telefono_contacto) {
+                <p class="dato"><strong>Telefono:</strong> {{ p.telefono_contacto }}</p>
+              }
+              @if (p.notas_cliente) {
+                <p class="dato">
+                  <strong>Nota del cliente:</strong> {{ p.notas_cliente }}
+                </p>
+              }
+
+              @if (p.detalle?.length) {
+                <h3 class="sub">Componentes</h3>
+                <ul class="partidas">
+                  @for (d of p.detalle; track d.id) {
+                    <li>
+                      <span class="cant">{{ d.cantidad }}x</span>
+                      <span class="nombre">{{ d.nombre_producto }}</span>
+                      <span class="precio">{{ d.importe | currency: 'MXN':'$':'1.2-2' }}</span>
+                    </li>
+                  }
+                </ul>
+                <div class="renglon total">
+                  <span>Total</span>
+                  <span>{{ p.total | currency: 'MXN':'$':'1.2-2' }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- ---------- Acciones ---------- -->
+            <div class="bloque acciones-bloque">
+              <h3>Gestion</h3>
+
+              @if (p.es_final) {
+                <p class="dato">
+                  Este proyecto ya esta en un estado final y no admite mas cambios.
+                </p>
+                @if (p.motivo_rechazo) {
+                  <p class="dato"><strong>Motivo:</strong> {{ p.motivo_rechazo }}</p>
+                }
+              } @else {
+                <p class="dato-pequeno">Mover la solicitud a:</p>
+                <div class="botones-estado">
+                  @for (s of p.siguientes; track s) {
+                    <button
+                      type="button"
+                      class="accion"
+                      [class.seleccionado]="destino() === s"
+                      [class.peligro]="s === 'rechazado' || s === 'cancelado'"
+                      (click)="elegirDestino(s)"
+                    >
+                      {{ etiquetas[s] }}
+                    </button>
+                  }
+                </div>
+
+                <!-- El formulario cambia segun la accion elegida. -->
+                @if (destino()) {
+                  <div class="formulario">
+                    @if (pideMotivo()) {
+                      <label for="motivo">Motivo del rechazo *</label>
+                      <textarea
+                        id="motivo"
+                        name="motivo"
+                        rows="3"
+                        placeholder="Explica por que no procede. El cliente lo leera."
+                        [(ngModel)]="form.motivo_rechazo"
+                      ></textarea>
+                    }
+
+                    @if (pideFechaVisita()) {
+                      <label for="visita">Fecha de visita tecnica</label>
+                      <input
+                        id="visita"
+                        type="date"
+                        name="visita"
+                        [(ngModel)]="form.fecha_visita"
+                      />
+                    }
+
+                    @if (pideFechaInstalacion()) {
+                      <label for="instalacion">Fecha de instalacion *</label>
+                      <input
+                        id="instalacion"
+                        type="date"
+                        name="instalacion"
+                        [(ngModel)]="form.fecha_instalacion"
+                      />
+                    }
+
+                    @if (!pideMotivo()) {
+                      <label for="comentario">Comentario para el historial</label>
+                      <input
+                        id="comentario"
+                        type="text"
+                        name="comentario"
+                        placeholder="Opcional: que se hizo o que sigue"
+                        [(ngModel)]="form.comentario"
+                      />
+                    }
+
+                    <button
+                      type="button"
+                      class="principal ancho"
+                      [disabled]="cargando()"
+                      (click)="aplicar()"
+                    >
+                      {{ cargando() ? 'Guardando...' : 'Confirmar cambio' }}
+                    </button>
+                  </div>
+                }
+              }
+
+              <!-- ---------- Fechas y notas sin cambiar de estado ---------- -->
+              <h3 class="sub">Fechas y notas</h3>
+
+              <label for="v2">Visita tecnica</label>
+              <input id="v2" type="date" name="v2" [(ngModel)]="form.fecha_visita" />
+
+              <label for="i2">Instalacion</label>
+              <input id="i2" type="date" name="i2" [(ngModel)]="form.fecha_instalacion" />
+
+              <label for="n2">Notas tecnicas</label>
+              <textarea
+                id="n2"
+                name="n2"
+                rows="2"
+                placeholder="Observaciones del sitio, requisitos especiales..."
+                [(ngModel)]="form.notas_admin"
+              ></textarea>
+
+              <button
+                type="button"
+                class="secundario ancho"
+                [disabled]="cargando()"
+                (click)="guardarDatos()"
+              >
+                Guardar fechas y notas
+              </button>
+            </div>
+          </div>
+
+          <!-- ---------- Bitacora ---------- -->
+          @if (p.historial?.length) {
+            <h3 class="seccion">Historial</h3>
+            <ul class="historial">
+              @for (h of p.historial; track h.id) {
+                <li>
+                  <span class="punto"></span>
+                  <div>
+                    <strong>{{ h.estado_etiqueta }}</strong>
+                    <span class="meta">{{ h.creado_en | date: 'dd/MM/yyyy HH:mm' }}</span>
+                    @if (h.comentario) {
+                      <p class="comentario">{{ h.comentario }}</p>
+                    }
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
+
+      <!-- ================= Lista ================= -->
+      @if (!abierto() && pedidos().length) {
+        <div class="tabla">
+          @for (p of pedidos(); track p.id) {
+            <article
+              class="fila-pedido"
+              role="button"
+              tabindex="0"
+              [class.nueva]="p.estado === 'solicitado'"
+              (click)="abrir(p)"
+              (keydown.enter)="abrir(p)"
+              (keydown.space)="abrir(p)"
+            >
+              <div class="col principal-col">
+                <strong>{{ p.folio }}</strong>
+                <span class="meta">{{ p.cliente_nombre }}</span>
+              </div>
+
+              <div class="col">
+                <span class="estado" [class]="colorEstado(p)">{{ p.estado_etiqueta }}</span>
+                @if (!p.detenido) {
+                  <div class="barra">
+                    <div class="relleno" [style.width.%]="p.progreso"></div>
+                  </div>
+                }
+              </div>
+
+              <div class="col fechas">
+                @if (p.fecha_instalacion) {
+                  <span class="meta">
+                    Instala: {{ p.fecha_instalacion | date: 'dd/MM/yy' }}
+                  </span>
+                } @else if (p.fecha_visita) {
+                  <span class="meta">
+                    Visita: {{ p.fecha_visita | date: 'dd/MM/yy' }}
+                  </span>
+                } @else {
+                  <span class="meta pendiente">Sin fecha</span>
+                }
+                <span class="meta">{{ p.creado_en | date: 'dd/MM/yy' }}</span>
+              </div>
+
+              <div class="col monto">
+                <span class="importe">{{ p.total | currency: 'MXN':'$':'1.2-2' }}</span>
+                <span class="meta">{{ p.partidas }} item(s)</span>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    }
+  </div>
+</ion-content>

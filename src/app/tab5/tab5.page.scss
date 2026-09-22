@@ -1,0 +1,525 @@
+@use "sass:color";
+
+$fuente-principal: 'Roboto', sans-serif;
+$color-principal: #455a64;
+$acento: #e08a1e;
+$verde: #1b7f4b;
+$bk1: 700px;
+
+$claro-50: color.adjust($color-principal, $lightness: 50%);
+$claro-55: color.adjust($color-principal, $lightness: 55%);
+$claro-60: color.adjust($color-principal, $lightness: 60%);
+$oscuro-15: color.adjust($color-principal, $lightness: -15%);
+
+ion-content {
+  --background: #fff;
+  --color: #{$color-principal};
+  font-family: $fuente-principal;
+  color: $color-principal;
+  line-height: 1.5;
+}
+
+.contenedor,
+.contenedor h1,
+.contenedor h2,
+.contenedor h3,
+.contenedor label,
+.contenedor strong,
+.contenedor li,
+.contenedor span:not(.nombre-empresa):not(.estado):not(.importe):not(.precio):not(.cifra),
+.contenedor p:not(.aviso) {
+  color: $color-principal;
+}
+
+.contenedor {
+  max-width: 1170px;
+  margin: 0 auto 1rem;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 1.7rem;
+}
+
+.nombre-empresa {
+  color: $acento;
+}
+
+.seccion {
+  border-bottom: 1px solid rgba($color-principal, 0.2);
+  font-size: 1rem;
+  margin: 1.3rem 0 0.7rem;
+  padding-bottom: 0.3rem;
+}
+
+.sub {
+  font-size: 0.88rem;
+  margin: 1rem 0 0.4rem;
+}
+
+// ---------------- Resumen ----------------
+.resumen {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(3, 1fr);
+  margin-bottom: 1.1rem;
+}
+
+.dato-resumen {
+  background-color: $claro-50;
+  border-radius: 5px;
+  padding: 0.7rem;
+  text-align: center;
+
+  .cifra {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: bold;
+
+    &.monto {
+      color: $acento !important;
+      font-size: 1.15rem;
+    }
+  }
+
+  .etiqueta {
+    font-size: 0.72rem;
+    opacity: 0.8;
+  }
+}
+
+// ---------------- Filtros ----------------
+.categorias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.chip {
+  background-color: $claro-55;
+  border: 1px solid rgba($color-principal, 0.25);
+  border-radius: 14px;
+  color: $color-principal;
+  cursor: pointer;
+  font-family: $fuente-principal;
+  font-size: 0.76rem;
+  padding: 0.26rem 0.75rem;
+
+  &:hover {
+    background-color: $claro-50;
+  }
+
+  &.activo {
+    background-color: $color-principal;
+    border-color: $color-principal;
+    color: #fff;
+  }
+}
+
+// ---------------- Etiquetas de estado ----------------
+.estado {
+  border-radius: 12px;
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: bold;
+  padding: 0.18rem 0.6rem;
+  white-space: nowrap;
+
+  &.gris        { background-color: #eceff1; color: #546e7a !important; }
+  &.azul        { background-color: #e3f2fd; color: #1565c0 !important; }
+  &.verde       { background-color: #e6f4ea; color: #10603a !important; }
+  &.ambar       { background-color: #fff4e5; color: #8a5300 !important; }
+  &.verde-oscuro{ background-color: #1b7f4b; color: #fff !important; }
+  &.rojo        { background-color: #fdecea; color: #8c1d18 !important; }
+}
+
+// ---------------- Lista de solicitudes ----------------
+.tabla {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fila-pedido {
+  background-color: #fff;
+  border-left: 4px solid transparent;
+  border-radius: 4px;
+  box-shadow: 0 0 8px 0 rgba($color-principal, 0.3);
+  cursor: pointer;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 1fr;
+  padding: 0.75rem;
+
+  @media screen and (min-width: $bk1) {
+    align-items: center;
+    grid-template-columns: 1.4fr 1.2fr 1fr 0.9fr;
+  }
+
+  &:hover {
+    box-shadow: 0 0 12px 0 rgba($color-principal, 0.5);
+  }
+
+  // Las nuevas llevan marca lateral: son las que esperan atencion.
+  &.nueva {
+    border-left-color: $acento;
+  }
+
+  .col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+
+  .meta {
+    font-size: 0.73rem;
+    opacity: 0.78;
+
+    &.pendiente {
+      color: #8a5300 !important;
+      font-style: italic;
+    }
+  }
+
+  .monto {
+    @media screen and (min-width: $bk1) {
+      align-items: flex-end;
+    }
+  }
+
+  .importe {
+    color: $acento !important;
+    font-weight: bold;
+  }
+}
+
+.barra {
+  background-color: $claro-55;
+  border-radius: 10px;
+  height: 5px;
+  margin-top: 0.3rem;
+  overflow: hidden;
+  width: 100%;
+
+  .relleno {
+    background-color: $verde;
+    height: 100%;
+    transition: width 0.35s ease;
+  }
+}
+
+// ---------------- Detalle ----------------
+.detalle {
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 0 0 20px 0 rgba($color-principal, 0.55);
+  padding: 1.1rem;
+}
+
+.volver {
+  background: none;
+  border: none;
+  color: $acento;
+  cursor: pointer;
+  font-family: $fuente-principal;
+  font-size: 0.82rem;
+  margin-bottom: 0.8rem;
+  padding: 0;
+}
+
+.cabecera {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: space-between;
+
+  h2 {
+    font-size: 1.2rem;
+    margin: 0;
+  }
+
+  .meta {
+    display: block;
+    font-size: 0.76rem;
+    opacity: 0.78;
+  }
+}
+
+.bloques {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: 1fr;
+  margin-top: 0.9rem;
+
+  @media screen and (min-width: $bk1) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.bloque {
+  background-color: $claro-50;
+  border-radius: 4px;
+  padding: 0.85rem;
+
+  h3 {
+    font-size: 0.92rem;
+    margin: 0 0 0.5rem;
+  }
+}
+
+.dato {
+  font-size: 0.82rem;
+  margin: 0.2rem 0;
+}
+
+.dato-pequeno {
+  font-size: 0.76rem;
+  margin: 0 0 0.4rem;
+  opacity: 0.85;
+}
+
+// ---------------- Partidas ----------------
+.partidas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    align-items: center;
+    border-bottom: 1px solid rgba($color-principal, 0.12);
+    display: flex;
+    font-size: 0.8rem;
+    gap: 0.45rem;
+    padding: 0.32rem 0;
+  }
+
+  .cant {
+    background-color: #fff;
+    border-radius: 3px;
+    font-size: 0.72rem;
+    font-weight: bold;
+    padding: 0.08rem 0.3rem;
+  }
+
+  .nombre {
+    flex-grow: 1;
+  }
+
+  .precio {
+    color: $acento !important;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+}
+
+.renglon {
+  display: flex;
+  font-size: 0.85rem;
+  justify-content: space-between;
+  padding: 0.15rem 0;
+
+  &.total {
+    border-top: 1px solid rgba($color-principal, 0.25);
+    font-weight: bold;
+    margin-top: 0.3rem;
+    padding-top: 0.35rem;
+
+    span:last-child {
+      color: $acento !important;
+    }
+  }
+}
+
+// ---------------- Acciones ----------------
+.botones-estado {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.6rem;
+}
+
+.accion {
+  background-color: #fff;
+  border: 1px solid rgba($color-principal, 0.4);
+  border-radius: 3px;
+  color: $color-principal;
+  cursor: pointer;
+  font-family: $fuente-principal;
+  font-size: 0.76rem;
+  padding: 0.3rem 0.7rem;
+
+  &:hover {
+    background-color: $claro-55;
+  }
+
+  // El elegido se marca para que quede claro que formulario se llena.
+  &.seleccionado {
+    background-color: $color-principal;
+    border-color: $color-principal;
+    color: #fff;
+  }
+
+  &.peligro {
+    border-color: rgba(#b3261e, 0.5);
+    color: #8c1d18;
+
+    &.seleccionado {
+      background-color: #b3261e;
+      border-color: #b3261e;
+      color: #fff;
+    }
+  }
+}
+
+.formulario {
+  background-color: #fff;
+  border-radius: 4px;
+  margin-bottom: 0.8rem;
+  padding: 0.7rem;
+}
+
+label {
+  display: block;
+  font-size: 0.78rem;
+  margin-bottom: 0.18rem;
+  margin-top: 0.5rem;
+}
+
+input,
+textarea {
+  background-color: #fff;
+  border: 1px solid rgba($color-principal, 0.4);
+  border-radius: 3px;
+  box-sizing: border-box;
+  color: $color-principal;
+  font-family: $fuente-principal;
+  font-size: 0.85rem;
+  padding: 0.42rem 0.5rem;
+  width: 100%;
+
+  &:focus {
+    border-color: $acento;
+    outline: none;
+  }
+}
+
+textarea {
+  resize: vertical;
+}
+
+// ---------------- Botones ----------------
+.principal,
+.secundario {
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: $fuente-principal;
+  font-size: 0.85rem;
+  padding: 0.5rem 1.1rem;
+
+  &.ancho {
+    display: block;
+    margin-top: 0.8rem;
+    width: 100%;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.principal {
+  background-color: $color-principal;
+  border: 1px solid $color-principal;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background-color: $oscuro-15;
+  }
+}
+
+.secundario {
+  background: none;
+  border: 1px solid rgba($color-principal, 0.45);
+  color: $color-principal;
+
+  &:hover:not(:disabled) {
+    background-color: $claro-55;
+  }
+}
+
+// ---------------- Bitacora ----------------
+.historial {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    gap: 0.6rem;
+    padding: 0.4rem 0;
+  }
+
+  .punto {
+    background-color: $verde;
+    border-radius: 50%;
+    flex-shrink: 0;
+    height: 9px;
+    margin-top: 0.4rem;
+    width: 9px;
+  }
+
+  strong {
+    font-size: 0.85rem;
+    margin-right: 0.4rem;
+  }
+
+  .meta {
+    font-size: 0.73rem;
+    opacity: 0.75;
+  }
+
+  .comentario {
+    font-size: 0.8rem;
+    margin: 0.15rem 0 0;
+    opacity: 0.9;
+  }
+}
+
+// ---------------- Estados vacios y avisos ----------------
+.vacio-estado {
+  padding: 2rem 0;
+  text-align: center;
+}
+
+.vacio {
+  font-size: 0.9rem;
+  font-style: italic;
+  opacity: 0.8;
+  padding: 0.8rem 0;
+  text-align: center;
+}
+
+.aviso {
+  border-radius: 4px;
+  font-size: 0.85rem;
+  margin-bottom: 0.8rem;
+  padding: 0.65rem 0.8rem;
+
+  &.error {
+    background-color: #fdecea;
+    border-left: 4px solid #b3261e;
+    color: #8c1d18;
+  }
+
+  &.ok {
+    background-color: #e6f4ea;
+    border-left: 4px solid #1b7f4b;
+    color: #10603a;
+  }
+}

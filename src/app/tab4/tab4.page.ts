@@ -1,134 +1,194 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { DatePipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { CurrencyPipe, DatePipe } from '@angular/common';
+import { Router } from '@angular/router';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
-import { NotaRepository } from '../services/nota.repository';
-import { Nota, FormularioNota, FORM_NOTA_VACIO } from '../models';
+import { PedidoRepository } from '../services/pedido.repository';
+import { SesionService } from '../services/sesion.service';
+import {
+  ApiError,
+  Pedido,
+  EstadoPedido,
+  FLUJO_PEDIDO,
+  COLOR_ESTADO,
+} from '../models';
 
 /**
- * CRUD de notas guardadas en el dispositivo.
+ * Seguimiento de las solicitudes del cliente.
  *
- * Esta vista es la demostracion de persistencia local de la entrega: no
- * consume la API ni necesita que XAMPP este encendido. Todo lo que se crea,
- * edita o elimina aqui se escribe en el almacenamiento del telefono con
- * Capacitor Preferences y sigue ahi despues de cerrar la aplicacion.
+ * Es la vista que responde "en que va mi pedido": muestra la barra de
+ * avance, las fechas que fijo el administrador y la bitacora completa
+ * de lo que ha pasado con el proyecto.
  */
 @Component({
   selector: 'app-tab4',
   templateUrl: 'tab4.page.html',
   styleUrls: ['tab4.page.scss'],
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent, FormsModule, DatePipe],
+  imports: [
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonContent,
+    CurrencyPipe,
+    DatePipe,
+  ],
 })
 export class Tab4Page implements OnInit {
-  private repo = inject(NotaRepository);
+  private repo = inject(PedidoRepository);
+  private sesion = inject(SesionService);
+  private router = inject(Router);
 
-  /** La lista vive en el repositorio; la vista solo la lee. */
-  notas = this.repo.notas;
-  cargado = this.repo.cargado;
+  pedidos = this.repo.pedidos;
+  desdeCache = this.repo.desdeCache;
+  usuario = this.sesion.usuario;
+  autenticado = this.sesion.autenticado;
 
-  // Signals: la app es zoneless, Preferences resuelve fuera de Angular.
-  mensajeOk = signal('');
+  cargando = signal(false);
   mensajeError = signal('');
+  mensajeOk = signal('');
 
-  /** null = creando. Un id = editando esa nota. */
-  editandoId = signal<string | null>(null);
+  /** Pedido abierto en el detalle. null = solo se ve la lista. */
+  abierto = signal<Pedido | null>(null);
 
-  editando = computed(() => this.editandoId() !== null);
+  /** Los seis pasos del avance, para pintar la linea de tiempo. */
+  flujo = FLUJO_PEDIDO;
 
-  /** Contador para la cabecera: ayuda a ver de un vistazo que persistio. */
-  total = computed(() => this.notas().length);
-  favoritas = computed(() => this.notas().filter((n) => n.favorita).length);
+  /** Etiquetas de los pasos, en el mismo orden que el flujo. */
+  readonly etiquetasFlujo: Record<EstadoPedido, string> = {
+    solicitado: 'Solicitado',
+    en_revision: 'En revision',
+    aprobado: 'Aprobado',
+    agendado: 'Agendado',
+    en_instalacion: 'Instalando',
+    completado: 'Completado',
+    rechazado: 'Rechazado',
+    cancelado: 'Cancelado',
+  };
 
-  form: FormularioNota = { ...FORM_NOTA_VACIO };
+  /** Separa los que siguen su curso de los que ya terminaron. */
+  enProceso = computed(() => this.pedidos().filter((p) => !p.es_final));
+  cerrados = computed(() => this.pedidos().filter((p) => p.es_final));
+
+  async ngOnInit() {
+    // Se espera a que la sesion este leida del dispositivo: esta vista
+    // se monta en paralelo con la barra de pestanas, y sin esperar
+    // encontraria el usuario vacio aunque haya sesion guardada.
+    await this.sesion.listo();
+    await this.cargar();
+  }
 
   // ------------------------------------------------------------
   //  READ
   // ------------------------------------------------------------
+  async cargar() {
+    const usuario = this.usuario();
 
-  /** Lee del dispositivo al entrar a la vista. */
-  async ngOnInit() {
-    await this.repo.cargar();
-  }
-
-  // ------------------------------------------------------------
-  //  CREATE / UPDATE
-  // ------------------------------------------------------------
-
-  async guardar() {
-    this.limpiarMensajes();
-
-    const titulo = this.form.titulo.trim();
-    const contenido = this.form.contenido.trim();
-
-    if (!titulo) {
-      this.mensajeError.set('El titulo es obligatorio.');
+    if (!usuario) {
+      // Sin sesion no hay pedidos que mostrar; la vista lo explica.
       return;
     }
 
-    const id = this.editandoId();
-
-    if (id === null) {
-      await this.repo.crear({ titulo, contenido });
-      this.mensajeOk.set('Nota creada y guardada en el dispositivo.');
-    } else {
-      await this.repo.actualizar(id, { titulo, contenido });
-      this.mensajeOk.set('Nota actualizada en el dispositivo.');
+    this.cargando.set(true);
+    this.mensajeError.set('');
+    try {
+      await this.repo.cargarCache(`${usuario.id}`);
+      await this.repo.listarDeCliente(usuario.id);
+    } catch (e) {
+      this.mostrarError(e);
+    } finally {
+      this.cargando.set(false);
     }
-
-    this.cancelar();
   }
 
-  editar(n: Nota) {
+  /** Abre el detalle: partidas, fechas e historial completo. */
+  async abrir(pedido: Pedido) {
     this.limpiarMensajes();
-    this.editandoId.set(n.id);
-    this.form = { titulo: n.titulo, contenido: n.contenido };
+    this.cargando.set(true);
+    try {
+      const completo = await this.repo.obtener(pedido.id);
+      this.abierto.set(completo);
+    } catch (e) {
+      // Si no hay conexion se muestra lo que ya se tenia del listado,
+      // aunque sin partidas ni bitacora.
+      this.abierto.set(pedido);
+      this.mostrarError(e);
+    } finally {
+      this.cargando.set(false);
+    }
   }
 
-  cancelar() {
-    this.editandoId.set(null);
-    this.form = { ...FORM_NOTA_VACIO };
-  }
-
-  /** Edicion parcial: solo viaja el campo favorita. */
-  async alternarFavorita(n: Nota) {
+  cerrar() {
+    this.abierto.set(null);
     this.limpiarMensajes();
-    await this.repo.alternarFavorita(n.id);
   }
 
   // ------------------------------------------------------------
-  //  DELETE
+  //  Cancelar
   // ------------------------------------------------------------
 
-  async eliminar(n: Nota) {
-    if (!confirm(`Eliminar la nota "${n.titulo}"?`)) {
+  /** El cliente puede echarse para atras mientras no este instalando. */
+  puedeCancelar(pedido: Pedido): boolean {
+    return pedido.siguientes.includes('cancelado');
+  }
+
+  async cancelar(pedido: Pedido) {
+    if (!confirm(`Cancelar la solicitud ${pedido.folio}?`)) {
       return;
     }
 
     this.limpiarMensajes();
-    await this.repo.eliminar(n.id);
-    this.mensajeOk.set('Nota eliminada del dispositivo.');
-
-    if (this.editandoId() === n.id) {
-      this.cancelar();
+    this.cargando.set(true);
+    try {
+      const cancelado = await this.repo.cancelar(pedido.id);
+      this.abierto.set(cancelado);
+      this.mensajeOk.set(`Solicitud ${pedido.folio} cancelada.`);
+      await this.cargar();
+    } catch (e) {
+      this.mostrarError(e);
+    } finally {
+      this.cargando.set(false);
     }
   }
 
-  async vaciar() {
-    if (!this.total()) {
-      return;
-    }
-    if (!confirm('Eliminar TODAS las notas guardadas?')) {
-      return;
-    }
+  // ------------------------------------------------------------
+  //  Barra de avance
+  // ------------------------------------------------------------
 
-    this.limpiarMensajes();
-    await this.repo.vaciar();
-    this.mensajeOk.set('Se eliminaron todas las notas.');
-    this.cancelar();
+  /** Un paso esta cumplido si el pedido ya paso por el. */
+  pasoCumplido(pedido: Pedido, paso: EstadoPedido): boolean {
+    const indice = this.flujo.indexOf(paso);
+    return !pedido.detenido && indice < pedido.paso;
+  }
+
+  /** El paso donde esta ahora mismo. */
+  pasoActual(pedido: Pedido, paso: EstadoPedido): boolean {
+    return !pedido.detenido && this.flujo.indexOf(paso) === pedido.paso - 1;
+  }
+
+  /** Clase de color para la etiqueta del estado. */
+  colorEstado(pedido: Pedido): string {
+    return COLOR_ESTADO[pedido.estado] ?? 'gris';
+  }
+
+  irAlCatalogo() {
+    this.router.navigateByUrl('/tabs/tab2');
+  }
+
+  irAAcceder() {
+    this.router.navigateByUrl('/tabs/tab1');
+  }
+
+  // ------------------------------------------------------------
+  //  Utilidades
+  // ------------------------------------------------------------
+
+  private mostrarError(e: unknown) {
+    const msg = e instanceof ApiError ? e.message : 'Ocurrio un error inesperado.';
+    const codigo = e instanceof ApiError && e.codigo ? ` (codigo ${e.codigo})` : '';
+    this.mensajeError.set(msg + codigo);
   }
 
   private limpiarMensajes() {
-    this.mensajeOk.set('');
     this.mensajeError.set('');
+    this.mensajeOk.set('');
   }
 }

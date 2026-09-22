@@ -1,136 +1,195 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Usuarios</ion-title>
+    <ion-title>Carrito</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
   <ion-header collapse="condense">
     <ion-toolbar>
-      <ion-title size="large">Usuarios</ion-title>
+      <ion-title size="large">Carrito</ion-title>
     </ion-toolbar>
   </ion-header>
 
   <div class="contenedor">
-    <h1 class="logo"><span class="nombre-empresa">CRUD</span> Usuarios</h1>
+    <h1 class="logo">Tu <span class="nombre-empresa">proyecto</span></h1>
+    <p class="leyenda">
+      El carrito se guarda en tu dispositivo: puedes cerrar la aplicacion y
+      encontrarlo igual al volver.
+    </p>
 
-    <div class="wrapper">
+    @if (mensajeError()) {
+      <p class="aviso error">{{ mensajeError() }}</p>
+    }
 
-      <!-- ================= Panel izquierdo: lista ================= -->
-      <div class="info-empresa">
-        <h3>Registrados</h3>
-
-        <!-- Aviso de datos locales: el servidor no respondio y lo que se
-             muestra salio del almacenamiento del dispositivo. -->
-        @if (desdeCache() && usuarios().length) {
-          <p class="aviso-cache">
-            Sin conexion con el servidor. Mostrando los datos guardados en el
-            dispositivo@if (sincronizado()) { (ultima sincronizacion:
-            {{ sincronizado() | date: 'dd/MM/yyyy HH:mm' }})}.
-          </p>
+    @if (mensajeOk()) {
+      <div class="aviso ok">
+        <p>{{ mensajeOk() }}</p>
+        @if (folioCreado()) {
+          <button type="button" class="enlace" (click)="irAMisPedidos()">
+            Ver el avance de mi solicitud
+          </button>
         }
+      </div>
+    }
 
-        @if (cargando() && !usuarios().length) {
-          <p class="vacio">Cargando...</p>
-        }
-
-        @if (!cargando() && !usuarios().length) {
-          <p class="vacio">No hay usuarios todavia.</p>
-        }
-
-        <ul class="servicios">
-          @for (u of usuarios(); track u.id) {
-            <li class="usuario" [class.seleccionado]="editandoId() === u.id">
-              <div class="datos">
-                <strong>{{ u.full_name }}</strong>
-                <span class="meta">&#64;{{ u.username }}</span>
-                <span class="meta">{{ u.email }}</span>
-                <span class="estado" [class.inactivo]="u.activo !== 1">
-                  {{ u.activo === 1 ? 'Activo' : 'Inactivo' }}
-                </span>
-              </div>
-
-              <div class="acciones">
-                <button type="button" class="mini" (click)="editar(u)">Editar</button>
-                <button type="button" class="mini" (click)="alternarActivo(u)">
-                  {{ u.activo === 1 ? 'Desactivar' : 'Activar' }}
-                </button>
-                <button type="button" class="mini borrar" (click)="eliminar(u)">Borrar</button>
-              </div>
-            </li>
-          }
-        </ul>
-
-        <button type="button" class="mini recargar" (click)="cargar()" [disabled]="cargando()">
-          Recargar (GET)
+    <!-- ================= Carrito vacio ================= -->
+    @if (cargado() && vacio() && !folioCreado()) {
+      <div class="vacio-estado">
+        <p class="vacio">Tu carrito esta vacio.</p>
+        <button type="button" class="principal" (click)="irAlCatalogo()">
+          Ver el catalogo
         </button>
       </div>
+    }
 
-      <!-- ================= Panel derecho: formulario ================= -->
-      <div class="contacto">
-        <h3>
-          {{ editando() ? 'Editar usuario #' + editandoId() : 'Nuevo usuario' }}
-        </h3>
+    @if (!cargado()) {
+      <p class="vacio">Leyendo el carrito guardado...</p>
+    }
 
-        @if (mensajeError()) {
-          <p class="aviso error">{{ mensajeError() }}</p>
-        }
-        @if (mensajeOk()) {
-          <p class="aviso ok">{{ mensajeOk() }}</p>
-        }
+    @if (!vacio()) {
+      <div class="wrapper">
 
-        <form class="formulario" (ngSubmit)="guardar()">
-          <p>
-            <label for="username">Usuario</label>
-            <input id="username" type="text" name="username" [(ngModel)]="form.username" required />
-          </p>
-          <p>
-            <label for="full_name">Nombre completo</label>
-            <input id="full_name" type="text" name="full_name" [(ngModel)]="form.full_name" required />
-          </p>
-          <p>
-            <label for="email">Correo</label>
-            <input id="email" type="email" name="email" [(ngModel)]="form.email" required />
-          </p>
-          <p>
-            <label for="password">
-              Contrase&ntilde;a
-              @if (editando()) {
-                <span class="pista">(vacio = no se cambia)</span>
-              }
-            </label>
-            <input id="password" type="password" name="password" [(ngModel)]="form.password" />
-          </p>
+        <!-- ================= Lineas del carrito ================= -->
+        <div class="panel-lista">
+          <h3>
+            Componentes
+            <span class="contador">
+              {{ totales().lineas }} linea(s), {{ totales().piezas }} pieza(s)
+            </span>
+          </h3>
 
-          @if (editando()) {
-            <p>
-              <label for="activo">Estado</label>
-              <select id="activo" name="activo" [(ngModel)]="form.activo">
-                <option [ngValue]="1">Activo</option>
-                <option [ngValue]="0">Inactivo</option>
-              </select>
+          <ul class="lista">
+            @for (i of items(); track i.producto_id) {
+              <li class="linea">
+                <div class="miniatura">
+                  @if (i.imagen_url) {
+                    <img [src]="i.imagen_url" [alt]="i.nombre" (error)="imagenFallo($event)" />
+                  }
+                </div>
+
+                <div class="datos">
+                  <strong>{{ i.nombre }}</strong>
+                  <span class="meta">{{ i.sku }}</span>
+                  <span class="meta">
+                    {{ i.precio | currency: 'MXN':'$':'1.2-2' }} por {{ i.unidad }}
+                  </span>
+
+                  <div class="acciones">
+                    <button type="button" class="paso" (click)="decrementar(i)">-</button>
+                    <span class="numero">{{ i.cantidad }}</span>
+                    <button type="button" class="paso" (click)="incrementar(i)">+</button>
+                    <button type="button" class="mini peligro" (click)="eliminar(i)">
+                      Quitar
+                    </button>
+                  </div>
+                </div>
+
+                <span class="importe">{{ importe(i) | currency: 'MXN':'$':'1.2-2' }}</span>
+              </li>
+            }
+          </ul>
+
+          <button type="button" class="vaciar" (click)="vaciar()">
+            Vaciar carrito
+          </button>
+
+          <!-- Avisos de composicion: no bloquean, solo orientan. -->
+          @if (sinPaneles()) {
+            <p class="aviso-sugerencia">
+              Tu proyecto no incluye paneles. Si es un sistema nuevo, agrega los
+              paneles desde el catalogo.
             </p>
-            <p>
-              <label for="metodo">M&eacute;todo HTTP</label>
-              <select id="metodo" name="metodo" [ngModel]="metodoEdicion()" (ngModelChange)="metodoEdicion.set($event)">
-                <option value="PATCH">PATCH - solo lo que cambie</option>
-                <option value="PUT">PUT - reemplaza todo</option>
-              </select>
+          }
+          @if (sinInstalacion()) {
+            <p class="aviso-sugerencia">
+              No agregaste el servicio de instalacion. Si necesitas que lo
+              instalemos, agregalo al carrito.
+            </p>
+          }
+        </div>
+
+        <!-- ================= Datos de la solicitud ================= -->
+        <div class="panel-form">
+          <h3>Datos de instalacion</h3>
+
+          @if (!autenticado()) {
+            <p class="aviso-sugerencia">
+              Para enviar la solicitud necesitas una cuenta.
+              <button type="button" class="enlace" (click)="irAAcceder()">
+                Iniciar sesion o registrarme
+              </button>
             </p>
           }
 
-          <p class="full acciones-form">
-            <button type="submit" class="boton-enviar" [disabled]="cargando()">
-              {{ cargando() ? 'Guardando...' : (editando() ? 'Guardar (' + metodoEdicion() + ')' : 'Crear (POST)') }}
+          <form (ngSubmit)="enviar()">
+            <label for="direccion">Direccion donde se instalara *</label>
+            <input
+              id="direccion"
+              type="text"
+              name="direccion"
+              placeholder="Calle, numero, colonia"
+              [(ngModel)]="form.direccion_instalacion"
+            />
+
+            <label for="ciudad">Ciudad</label>
+            <input
+              id="ciudad"
+              type="text"
+              name="ciudad"
+              placeholder="Durango"
+              [(ngModel)]="form.ciudad"
+            />
+
+            <label for="telefono">Telefono de contacto</label>
+            <input
+              id="telefono"
+              type="tel"
+              name="telefono"
+              placeholder="618-000-0000"
+              [(ngModel)]="form.telefono_contacto"
+            />
+
+            <label for="notas">Notas para el tecnico</label>
+            <textarea
+              id="notas"
+              name="notas"
+              rows="3"
+              placeholder="Tipo de techo, orientacion, consumo mensual..."
+              [(ngModel)]="form.notas_cliente"
+            ></textarea>
+
+            <!-- ---------- Totales ---------- -->
+            <div class="totales">
+              <div class="renglon">
+                <span>Subtotal</span>
+                <span>{{ totales().subtotal | currency: 'MXN':'$':'1.2-2' }}</span>
+              </div>
+              <div class="renglon">
+                <span>IVA (16%)</span>
+                <span>{{ totales().iva | currency: 'MXN':'$':'1.2-2' }}</span>
+              </div>
+              <div class="renglon total">
+                <span>Total estimado</span>
+                <span>{{ totales().total | currency: 'MXN':'$':'1.2-2' }}</span>
+              </div>
+              <p class="nota-precio">
+                Es una estimacion. El precio final se confirma despues de la
+                visita tecnica.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              class="principal ancho"
+              [disabled]="enviando() || !autenticado()"
+            >
+              {{ enviando() ? 'Enviando...' : 'Enviar solicitud' }}
             </button>
+          </form>
+        </div>
 
-            @if (editando()) {
-              <button type="button" class="boton-enviar cancelar" (click)="cancelar()">Cancelar</button>
-            }
-          </p>
-        </form>
       </div>
-
-    </div>
+    }
   </div>
 </ion-content>
