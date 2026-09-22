@@ -14,7 +14,7 @@
   </ion-header>
 
   <div class="stage">
-    <div class="container" [class.log-in]="isLogIn" [class.active]="isActive">
+    <div class="container" [class.log-in]="isLogIn()" [class.active]="isActive()">
       <div class="box"></div>
 
       <div class="container-forms">
@@ -38,7 +38,7 @@
         </div>
 
         <div class="container-form">
-        @if (isActive && usuario()) {
+        @if (isActive() && usuario()) {
           <p class="bienvenida">Hola, {{ usuario()!.full_name }}</p>
         }
           <div class="form-item log-in">

@@ -15,10 +15,15 @@ export class Tab1Page implements OnInit {
   private repo = inject(UsuarioRepository);
   private sesion = inject(SesionService);
 
+  // Signals y no propiedades sueltas: la app es zoneless y estos valores
+  // cambian despues de un await (al restaurar la sesion del dispositivo o al
+  // responder la API), momento en el que Angular ya no esta observando. Con
+  // una propiedad normal el cambio ocurre pero la vista no se repinta.
+
   /** false = panel de Log in visible, true = panel de Sign up visible */
-  isLogIn = false;
+  isLogIn = signal(false);
   /** true = estado final con la palomita */
-  isActive = false;
+  isActive = signal(false);
 
   login: Credenciales = { username: '', password: '' };
   signup: NuevoUsuario = { email: '', full_name: '', username: '', password: '' };
@@ -41,12 +46,12 @@ export class Tab1Page implements OnInit {
 
     if (guardado) {
       this.usuario.set(guardado);
-      this.isActive = true;
+      this.isActive.set(true);
     }
   }
 
   toggleForm() {
-    this.isLogIn = !this.isLogIn;
+    this.isLogIn.update((v) => !v);
     this.mensajeError.set('');
   }
 
@@ -60,14 +65,14 @@ export class Tab1Page implements OnInit {
     this.cargando.set(true);
 
     try {
-      const usuario = this.isLogIn ? await this.registrar() : await this.iniciarSesion();
+      const usuario = this.isLogIn() ? await this.registrar() : await this.iniciarSesion();
 
       // Se guarda en el dispositivo antes de pintar: si la aplicacion se
       // cierra enseguida, la sesion ya quedo persistida.
       await this.sesion.iniciar(usuario);
 
       this.usuario.set(usuario);
-      this.isActive = true; // muestra la palomita
+      this.isActive.set(true); // muestra la palomita
     } catch (e) {
       // ApiError ya trae el mensaje que mando el PHP
       this.mensajeError.set(
@@ -105,7 +110,7 @@ export class Tab1Page implements OnInit {
   async reset() {
     await this.sesion.cerrar();
 
-    this.isActive = false;
+    this.isActive.set(false);
     this.mensajeError.set('');
     this.usuario.set(null);
     this.login = { username: '', password: '' };

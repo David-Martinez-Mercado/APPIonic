@@ -175,7 +175,7 @@ async ngOnInit() {
 
   if (guardado) {
     this.usuario.set(guardado);
-    this.isActive = true;   // entra directo al estado autenticado
+    this.isActive.set(true);   // entra directo al estado autenticado
   }
 }
 ```
@@ -396,7 +396,42 @@ falta Apache y MySQL encendidos, con `api/database.sql` importado.
 
 ---
 
-## 8. Cómo se utilizó la IA
+## 8. Un error encontrado al capturar las pantallas
+
+Tomar las capturas no fue solo trabajo de documentación: destapó un defecto real.
+La sesión se guardaba bien, pero al reabrir la aplicación volvía a aparecer el
+formulario de login, como si no se hubiera guardado nada.
+
+La causa **no estaba en la capa de persistencia**. `Tab1Page` mantenía `isActive`
+como una propiedad normal:
+
+```typescript
+isActive = false;            // antes
+...
+this.isActive = true;        // despues de un await
+```
+
+La aplicación es **zoneless**, así que Angular no vigila propiedades normales.
+`restaurar()` resuelve de forma asíncrona, y para cuando el valor cambiaba Angular
+ya no estaba observando: el estado era correcto en memoria pero la vista nunca se
+repintaba. La solución fue convertirlo en signal, que es lo que ya usaba el resto
+del componente:
+
+```typescript
+isActive = signal(false);    // despues
+...
+this.isActive.set(true);
+```
+
+Conviene señalar que el propio comentario del código ya advertía de esto (*"se usan
+signals porque la app es zoneless"*), y aun así la regla se rompía en las dos
+propiedades heredadas de la plantilla original. Un defecto de este tipo no aparece
+en una compilación ni en una prueba unitaria del repositorio: **solo se ve
+ejecutando la aplicación**.
+
+---
+
+## 9. Cómo se utilizó la IA
 
 El detalle de los prompts, con lo que se pidió, lo que generó la IA y lo que hubo que
 corregir, está en el documento **`PROMPTS-PERSISTENCIA.md`**.
