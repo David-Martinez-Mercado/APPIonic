@@ -6,4 +6,5 @@
  */
 export * from './usuario.model';
 export * from './foto.model';
+export * from './nota.model';
 export * from './respuesta-api.model';

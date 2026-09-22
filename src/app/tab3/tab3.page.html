@@ -20,6 +20,16 @@
       <div class="info-empresa">
         <h3>Registrados</h3>
 
+        <!-- Aviso de datos locales: el servidor no respondio y lo que se
+             muestra salio del almacenamiento del dispositivo. -->
+        @if (desdeCache() && usuarios().length) {
+          <p class="aviso-cache">
+            Sin conexion con el servidor. Mostrando los datos guardados en el
+            dispositivo@if (sincronizado()) { (ultima sincronizacion:
+            {{ sincronizado() | date: 'dd/MM/yyyy HH:mm' }})}.
+          </p>
+        }
+
         @if (cargando() && !usuarios().length) {
           <p class="vacio">Cargando...</p>
         }

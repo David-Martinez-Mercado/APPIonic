@@ -1,0 +1,129 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Notas</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Notas</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="contenedor">
+    <h1 class="logo"><span class="nombre-empresa">Notas</span> locales</h1>
+
+    <p class="leyenda">
+      Estas notas se guardan en el dispositivo con Capacitor Preferences.
+      No usan el servidor: siguen aqui aunque cierres la aplicacion.
+    </p>
+
+    <div class="wrapper">
+
+      <!-- ================= Panel izquierdo: lista ================= -->
+      <div class="panel-lista">
+        <h3>
+          Guardadas
+          @if (total()) {
+            <span class="contador">{{ total() }} nota(s), {{ favoritas() }} favorita(s)</span>
+          }
+        </h3>
+
+        @if (!cargado()) {
+          <p class="vacio">Leyendo el almacenamiento...</p>
+        }
+
+        @if (cargado() && !total()) {
+          <p class="vacio">No hay notas todavia. Crea la primera.</p>
+        }
+
+        <ul class="lista">
+          @for (n of notas(); track n.id) {
+            <li class="nota" [class.seleccionada]="editandoId() === n.id">
+              <div class="datos">
+                <strong>
+                  @if (n.favorita) { <span class="estrella">&#9733;</span> }
+                  {{ n.titulo }}
+                </strong>
+                @if (n.contenido) {
+                  <span class="contenido">{{ n.contenido }}</span>
+                }
+                <span class="meta">
+                  Creada: {{ n.creado_en | date: 'dd/MM/yyyy HH:mm' }}
+                </span>
+                @if (n.actualizado_en !== n.creado_en) {
+                  <span class="meta">
+                    Editada: {{ n.actualizado_en | date: 'dd/MM/yyyy HH:mm' }}
+                  </span>
+                }
+              </div>
+
+              <div class="acciones">
+                <button type="button" class="mini" (click)="editar(n)">Editar</button>
+                <button type="button" class="mini" (click)="alternarFavorita(n)">
+                  {{ n.favorita ? 'Quitar' : 'Favorita' }}
+                </button>
+                <button type="button" class="mini peligro" (click)="eliminar(n)">
+                  Eliminar
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+
+        @if (total()) {
+          <button type="button" class="vaciar" (click)="vaciar()">
+            Eliminar todas
+          </button>
+        }
+      </div>
+
+      <!-- ================= Panel derecho: formulario ================= -->
+      <div class="panel-form">
+        <h3>{{ editando() ? 'Editar nota' : 'Nueva nota' }}</h3>
+
+        @if (mensajeError()) {
+          <p class="aviso error">{{ mensajeError() }}</p>
+        }
+        @if (mensajeOk()) {
+          <p class="aviso ok">{{ mensajeOk() }}</p>
+        }
+
+        <form (ngSubmit)="guardar()">
+          <label for="titulo">Titulo</label>
+          <input
+            id="titulo"
+            type="text"
+            name="titulo"
+            maxlength="80"
+            placeholder="Titulo de la nota"
+            [(ngModel)]="form.titulo"
+          />
+
+          <label for="contenido">Contenido</label>
+          <textarea
+            id="contenido"
+            name="contenido"
+            rows="5"
+            placeholder="Escribe el contenido..."
+            [(ngModel)]="form.contenido"
+          ></textarea>
+
+          <div class="botones">
+            <button type="submit" class="principal">
+              {{ editando() ? 'Guardar cambios' : 'Crear nota' }}
+            </button>
+
+            @if (editando()) {
+              <button type="button" class="secundario" (click)="cancelar()">
+                Cancelar
+              </button>
+            }
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</ion-content>

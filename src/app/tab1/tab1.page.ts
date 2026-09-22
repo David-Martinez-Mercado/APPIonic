@@ -1,7 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
 import { UsuarioRepository } from '../services/usuario.repository';
+import { SesionService } from '../services/sesion.service';
 import { ApiError, Usuario, Credenciales, NuevoUsuario } from '../models';
 
 @Component({
@@ -10,8 +11,9 @@ import { ApiError, Usuario, Credenciales, NuevoUsuario } from '../models';
   styleUrls: ['tab1.page.scss'],
   imports: [IonHeader, IonToolbar, IonTitle, IonContent, FormsModule],
 })
-export class Tab1Page {
+export class Tab1Page implements OnInit {
   private repo = inject(UsuarioRepository);
+  private sesion = inject(SesionService);
 
   /** false = panel de Log in visible, true = panel de Sign up visible */
   isLogIn = false;
@@ -26,6 +28,22 @@ export class Tab1Page {
   cargando = signal(false);
   mensajeError = signal('');
   usuario = signal<Usuario | null>(null);
+
+  /**
+   * Restaura la sesion guardada al entrar.
+   *
+   * Es el punto que demuestra la persistencia: si en una ejecucion anterior
+   * se inicio sesion, aqui se recupera del dispositivo y la vista aparece
+   * directamente en el estado autenticado, sin pedir credenciales de nuevo.
+   */
+  async ngOnInit() {
+    const guardado = await this.sesion.restaurar();
+
+    if (guardado) {
+      this.usuario.set(guardado);
+      this.isActive = true;
+    }
+  }
 
   toggleForm() {
     this.isLogIn = !this.isLogIn;
@@ -43,6 +61,10 @@ export class Tab1Page {
 
     try {
       const usuario = this.isLogIn ? await this.registrar() : await this.iniciarSesion();
+
+      // Se guarda en el dispositivo antes de pintar: si la aplicacion se
+      // cierra enseguida, la sesion ya quedo persistida.
+      await this.sesion.iniciar(usuario);
 
       this.usuario.set(usuario);
       this.isActive = true; // muestra la palomita
@@ -79,7 +101,10 @@ export class Tab1Page {
     });
   }
 
-  reset() {
+  /** Cierra sesion: limpia la vista y borra el dato del dispositivo. */
+  async reset() {
+    await this.sesion.cerrar();
+
     this.isActive = false;
     this.mensajeError.set('');
     this.usuario.set(null);

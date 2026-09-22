@@ -30,13 +30,14 @@ durante el curso:
 
 ## Vistas de la aplicación
 
-La aplicación tiene **tres vistas** organizadas en pestañas:
+La aplicación tiene **cuatro vistas** organizadas en pestañas:
 
 | # | Vista | Ruta | Descripción |
 |---|-------|------|-------------|
 | 1 | **Acceso** | `/tabs/tab1` | Inicio de sesión y registro de usuarios. Panel animado que alterna entre ambos formularios. Valida contra la API y muestra los errores que devuelve el servidor. |
 | 2 | **Fotos** | `/tabs/tab2` | Galería que toma fotografías con la cámara del dispositivo y las almacena en el sistema de archivos usando Capacitor. |
-| 3 | **Usuarios** | `/tabs/tab3` | CRUD completo: lista todos los usuarios y permite crear (POST), actualizar parcialmente (PATCH), reemplazar (PUT), activar/desactivar y eliminar (DELETE). |
+| 3 | **Usuarios** | `/tabs/tab3` | CRUD completo: lista todos los usuarios y permite crear (POST), actualizar parcialmente (PATCH), reemplazar (PUT), activar/desactivar y eliminar (DELETE). Guarda una copia local para seguir mostrando datos sin conexión. |
+| 4 | **Notas** | `/tabs/tab4` | CRUD de notas guardadas en el propio dispositivo con Capacitor Preferences. No necesita servidor: la información permanece al cerrar y reabrir la aplicación. |
 
 ---
 
@@ -198,14 +199,21 @@ APPIonic/
 │   └── database.sql          # Script de la base de datos
 ├── docs/
 │   ├── PROMPTS-IA.md         # Evidencia de prompts usados con IA
+│   ├── PERSISTENCIA.md       # Entrega 3: persistencia local
+│   ├── PROMPTS-PERSISTENCIA.md # Prompts de la entrega de persistencia
 │   └── capturas/             # Capturas de ejecución
 ├── src/app/
 │   ├── services/
-│   │   ├── api.service.ts    # Cliente HTTP con axios
-│   │   └── photo.service.ts  # Cámara y almacenamiento (Capacitor)
+│   │   ├── http.service.ts      # Transporte HTTP con axios
+│   │   ├── storage.service.ts   # Persistencia local (Capacitor Preferences)
+│   │   ├── sesion.service.ts    # Sesión que sobrevive al cierre
+│   │   ├── usuario.repository.ts# Entidad Usuario + caché offline
+│   │   ├── nota.repository.ts   # Entidad Nota (100% local)
+│   │   └── photo.service.ts     # Cámara y almacenamiento (Capacitor)
 │   ├── tab1/                 # Vista 1: Login / Registro
 │   ├── tab2/                 # Vista 2: Galería de fotos
-│   └── tab3/                 # Vista 3: CRUD de usuarios
+│   ├── tab3/                 # Vista 3: CRUD de usuarios
+│   └── tab4/                 # Vista 4: CRUD de notas locales
 └── README.md
 ```
 

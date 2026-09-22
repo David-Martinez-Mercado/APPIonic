@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
 import { UsuarioRepository } from '../services/usuario.repository';
@@ -14,13 +15,19 @@ import {
   selector: 'app-tab3',
   templateUrl: 'tab3.page.html',
   styleUrls: ['tab3.page.scss'],
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent, FormsModule],
+  imports: [IonHeader, IonToolbar, IonTitle, IonContent, FormsModule, DatePipe],
 })
 export class Tab3Page implements OnInit {
   private repo = inject(UsuarioRepository);
 
   /** La lista vive en el repositorio; la vista solo la lee. */
   usuarios = this.repo.usuarios;
+
+  /** true cuando lo mostrado salio del dispositivo y no del servidor. */
+  desdeCache = this.repo.desdeCache;
+
+  /** Fecha ISO de la ultima sincronizacion correcta con la API. */
+  sincronizado = this.repo.sincronizado;
 
   // Signals: la app es zoneless, axios responde fuera de Angular.
   cargando = signal(false);
@@ -43,7 +50,15 @@ export class Tab3Page implements OnInit {
 
   editando = computed(() => this.editandoId() !== null);
 
+  /**
+   * Primero pinta lo que haya en el dispositivo y luego pide al servidor.
+   *
+   * Asi la lista aparece de inmediato al abrir la aplicacion aunque la red
+   * tarde, y si el servidor esta caido la vista conserva los ultimos datos
+   * conocidos en lugar de quedarse vacia.
+   */
   async ngOnInit() {
+    await this.repo.cargarCache();
     await this.cargar();
   }
 
@@ -56,6 +71,8 @@ export class Tab3Page implements OnInit {
     try {
       await this.repo.listar();
     } catch (e) {
+      // El repositorio ya dejo cargada la cache del dispositivo; solo se
+      // avisa de que lo que se ve puede estar desactualizado.
       this.mostrarError(e);
     } finally {
       this.cargando.set(false);

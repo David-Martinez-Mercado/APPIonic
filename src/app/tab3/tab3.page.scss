@@ -298,3 +298,14 @@ ion-content {
     color: #10603a;
   }
 }
+
+// Datos servidos desde el almacenamiento del dispositivo (sin conexion).
+.aviso-cache {
+  background-color: #fff4e5;
+  border-left: 4px solid #b26a00;
+  border-radius: 4px;
+  color: #8a5300;
+  font-size: 0.8rem;
+  margin-bottom: 0.9rem;
+  padding: 0.55rem 0.7rem;
+}

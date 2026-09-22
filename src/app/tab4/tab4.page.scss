@@ -1,0 +1,260 @@
+@use "sass:color";
+
+// Mismas variables y convenciones que la vista de usuarios (tab3), para que
+// las dos pantallas de CRUD se vean como parte de la misma aplicacion.
+$fuente-principal: 'Roboto', sans-serif;
+$color-principal: #455a64;
+$bk1: 700px;
+
+$claro-50: color.adjust($color-principal, $lightness: 50%);
+$claro-60: color.adjust($color-principal, $lightness: 60%);
+$oscuro-15: color.adjust($color-principal, $lightness: -15%);
+
+ion-content {
+  --background: #fff;
+  --color: #{$color-principal};
+  font-family: $fuente-principal;
+  color: $color-principal;
+  line-height: 1.5;
+}
+
+.contenedor,
+.contenedor h1,
+.contenedor h3,
+.contenedor label,
+.contenedor strong,
+.contenedor li,
+.contenedor span:not(.nombre-empresa):not(.estrella),
+.contenedor p:not(.aviso) {
+  color: $color-principal;
+}
+
+.contenedor {
+  max-width: 1170px;
+  margin: 0 auto 1rem;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 0.4rem;
+  font-size: 1.6rem;
+}
+
+.nombre-empresa {
+  color: $oscuro-15;
+}
+
+.leyenda {
+  text-align: center;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  opacity: 0.85;
+}
+
+.wrapper {
+  box-shadow: 0 0 20px 0 rgba($color-principal, 0.7);
+  border-radius: 5px;
+  overflow: hidden;
+
+  @media screen and (min-width: $bk1) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+  }
+}
+
+// ---------------- Panel izquierdo: lista ----------------
+.panel-lista {
+  padding: 1rem;
+  background-color: $claro-50;
+
+  h3 {
+    text-align: center;
+    margin-bottom: 0.5rem;
+
+    @media screen and (min-width: $bk1) {
+      text-align: left;
+    }
+  }
+}
+
+.contador {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: normal;
+  opacity: 0.8;
+}
+
+.vacio {
+  font-size: 0.85rem;
+  font-style: italic;
+  opacity: 0.8;
+  text-align: center;
+  padding: 0.8rem 0;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nota {
+  background-color: #fff;
+  border-radius: 4px;
+  margin-bottom: 0.6rem;
+  padding: 0.65rem 0.8rem;
+
+  &.seleccionada {
+    outline: 2px solid $oscuro-15;
+  }
+
+  .datos {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.45rem;
+  }
+
+  .contenido {
+    font-size: 0.85rem;
+    margin-top: 0.15rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .meta {
+    font-size: 0.72rem;
+    opacity: 0.75;
+  }
+
+  .estrella {
+    color: #b26a00;
+  }
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.mini {
+  background-color: $claro-60;
+  border: 1px solid rgba($color-principal, 0.35);
+  border-radius: 3px;
+  color: $color-principal;
+  cursor: pointer;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.55rem;
+
+  &:hover {
+    background-color: #fff;
+  }
+
+  &.peligro {
+    border-color: rgba(#b3261e, 0.45);
+    color: #8c1d18;
+  }
+}
+
+.vaciar {
+  background: none;
+  border: 1px solid rgba(#b3261e, 0.45);
+  border-radius: 3px;
+  color: #8c1d18;
+  cursor: pointer;
+  display: block;
+  font-size: 0.75rem;
+  margin: 0.8rem auto 0;
+  padding: 0.3rem 0.8rem;
+}
+
+// ---------------- Panel derecho: formulario ----------------
+.panel-form {
+  padding: 1rem;
+
+  h3 {
+    margin-bottom: 0.7rem;
+  }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    margin-bottom: 0.2rem;
+    margin-top: 0.6rem;
+  }
+
+  input,
+  textarea {
+    background-color: #fff;
+    border: 1px solid rgba($color-principal, 0.4);
+    border-radius: 3px;
+    box-sizing: border-box;
+    color: $color-principal;
+    font-family: $fuente-principal;
+    font-size: 0.9rem;
+    padding: 0.45rem 0.55rem;
+    width: 100%;
+
+    &:focus {
+      border-color: $oscuro-15;
+      outline: none;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+  }
+}
+
+.botones {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.principal,
+.secundario {
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.5rem 1.1rem;
+}
+
+.principal {
+  background-color: $color-principal;
+  border: 1px solid $color-principal;
+  color: #fff;
+
+  &:hover {
+    background-color: $oscuro-15;
+  }
+}
+
+.secundario {
+  background: none;
+  border: 1px solid rgba($color-principal, 0.45);
+  color: $color-principal;
+}
+
+// ---------------- Avisos ----------------
+.aviso {
+  border-radius: 4px;
+  font-size: 0.85rem;
+  margin-bottom: 0.6rem;
+  padding: 0.65rem 0.8rem;
+
+  &.error {
+    background-color: #fdecea;
+    border-left: 4px solid #b3261e;
+    color: #8c1d18;
+  }
+
+  &.ok {
+    background-color: #e6f4ea;
+    border-left: 4px solid #1b7f4b;
+    color: #10603a;
+  }
+}
