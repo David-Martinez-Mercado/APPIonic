@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
+import { EstadoConexionComponent } from '../components/estado-conexion.component';
 import { PedidoRepository } from '../services/pedido.repository';
 import { SesionService } from '../services/sesion.service';
 import {
@@ -28,6 +29,7 @@ import {
     IonToolbar,
     IonTitle,
     IonContent,
+    EstadoConexionComponent,
     CurrencyPipe,
     DatePipe,
   ],
@@ -67,6 +69,16 @@ export class Tab4Page implements OnInit {
   /** Separa los que siguen su curso de los que ya terminaron. */
   enProceso = computed(() => this.pedidos().filter((p) => !p.es_final));
   cerrados = computed(() => this.pedidos().filter((p) => p.es_final));
+
+  /**
+   * Lo que se vuelve a pedir cuando el usuario pulsa "Reintentar".
+   *
+   * Es una propiedad y no un metodo normal porque se pasa como valor al
+   * componente del aviso: una funcion flecha conserva el "this" de la
+   * clase, mientras que un metodo suelto lo perderia al invocarse
+   * desde fuera.
+   */
+  recargarDatos = () => this.cargar();
 
   async ngOnInit() {
     // Se espera a que la sesion este leida del dispositivo: esta vista

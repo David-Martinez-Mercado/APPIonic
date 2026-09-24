@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
+import { EstadoConexionComponent } from '../components/estado-conexion.component';
 import { ProductoRepository } from '../services/producto.repository';
 import { CarritoRepository } from '../services/carrito.repository';
 import {
@@ -27,6 +28,7 @@ import {
     IonToolbar,
     IonTitle,
     IonContent,
+    EstadoConexionComponent,
     FormsModule,
     CurrencyPipe,
     DatePipe,
@@ -80,6 +82,16 @@ export class Tab2Page implements OnInit {
 
   /** Para el contador "mostrando X de Y". */
   totalCatalogo = computed(() => this.productos().length);
+
+  /**
+   * Lo que se vuelve a pedir cuando el usuario pulsa "Reintentar".
+   *
+   * Es una propiedad y no un metodo normal porque se pasa como valor al
+   * componente del aviso: una funcion flecha conserva el "this" de la
+   * clase, mientras que un metodo suelto lo perderia al invocarse
+   * desde fuera.
+   */
+  recargarDatos = () => this.cargar();
 
   async ngOnInit() {
     // Primero lo que haya en el dispositivo, para pintar de inmediato;

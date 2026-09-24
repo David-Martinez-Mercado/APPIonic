@@ -13,6 +13,9 @@
 
   <div class="contenedor">
     <h1 class="logo"><span class="nombre-empresa">Solar</span> Durango</h1>
+
+    <!-- Aviso de conexion: aparece solo cuando hay un problema. -->
+    <app-estado-conexion [recargar]="recargarDatos" />
     <p class="leyenda">
       Paneles, estructuras, baterias e inversores con instalacion incluida.
       Arma tu proyecto y enviamos a un tecnico a revisarlo.

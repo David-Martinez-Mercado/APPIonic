@@ -14,6 +14,9 @@
   <div class="contenedor">
     <h1 class="logo">Gestion de <span class="nombre-empresa">proyectos</span></h1>
 
+    <!-- Aviso de conexion: aparece solo cuando hay un problema. -->
+    <app-estado-conexion [recargar]="recargarDatos" />
+
     <!-- ================= Sin permisos ================= -->
     @if (!esAdmin()) {
       <div class="vacio-estado">

@@ -89,6 +89,8 @@ src/app/
 │   ├── http.service.ts           Transporte HTTP (axios) — no sabe de entidades
 │   ├── storage.service.ts        Persistencia local (Capacitor Preferences)
 │   ├── sesion.service.ts         Sesión que sobrevive al cierre
+│   ├── conexion.service.ts       Detección de red y de servidor
+│   ├── pendientes.repository.ts  Cola de solicitudes sin enviar
 │   ├── usuario.repository.ts     Entidad Usuario
 │   ├── producto.repository.ts    Catálogo + caché offline
 │   ├── pedido.repository.ts      Pedidos y cambios de estado
@@ -109,6 +111,7 @@ directo, y la app es *zoneless*.
 | `carrito` | El proyecto en construcción |
 | `productos_cache` | Catálogo, para navegarlo sin conexión |
 | `pedidos_cache_<id>` | Último estado conocido de los pedidos |
+| `pedidos_pendientes` | Solicitudes que no se pudieron enviar por falta de conexión |
 
 ---
 
@@ -189,11 +192,28 @@ Todas las respuestas usan la misma envoltura:
 
 ---
 
+## Funcionamiento sin conexión
+
+La aplicación detecta si hay red y si el servidor responde, y lo distingue: «sin
+internet» y «el servidor está caído» no son el mismo problema ni se resuelven igual.
+
+Sin conexión se puede seguir:
+
+- **Navegando el catálogo**, servido desde la caché del dispositivo.
+- **Armando el carrito**, que es 100 % local.
+- **Consultando los pedidos**, con el último estado conocido.
+- **Enviando una solicitud**: queda guardada y se manda sola al volver la señal.
+
+El detalle está en `docs/RESILIENCIA.md`.
+
+---
+
 ## Documentación
 
 | Archivo | Contenido |
 |---|---|
 | `docs/PERSISTENCIA.md` | Entrega de persistencia local |
+| `docs/RESILIENCIA.md` | Manejo de errores y funcionamiento sin conexión |
 | `docs/MODELO-DATOS.md` | Modelo de datos y capa de acceso |
 | `docs/PROMPTS-IA.md` | Prompts usados durante el desarrollo |
 | `docs/capturas/` | Capturas de la aplicación en ejecución |
@@ -203,7 +223,7 @@ Todas las respuestas usan la misma envoltura:
 ## Tecnologías
 
 - **Ionic 9** + **Angular 22** (standalone, zoneless, signals)
-- **Capacitor 8** — Preferences para el almacenamiento local
+- **Capacitor 8** — Preferences para el almacenamiento local, Network para detectar la conexión
 - **axios** para el consumo de la API
 - **PHP 8** + **MySQL** (PDO con sentencias preparadas)
 - Imágenes de catálogo de [Pexels](https://www.pexels.com) (uso libre)

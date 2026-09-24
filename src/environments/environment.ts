@@ -24,4 +24,12 @@ export const environment = {
   apiUrl: `${HOST}/api/usuarios.php`,
   productosUrl: `${HOST}/api/productos.php`,
   pedidosUrl: `${HOST}/api/pedidos.php`,
+
+  /**
+   * Endpoint ligero para comprobar si el servidor responde.
+   *
+   * Se apunta a productos.php porque no necesita sesion ni parametros;
+   * lo unico que interesa es que conteste, no lo que devuelva.
+   */
+  pingUrl: `${HOST}/api/productos.php`,
 };

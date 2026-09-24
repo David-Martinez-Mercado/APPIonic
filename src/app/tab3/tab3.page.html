@@ -13,6 +13,9 @@
 
   <div class="contenedor">
     <h1 class="logo">Tu <span class="nombre-empresa">proyecto</span></h1>
+
+    <!-- Aviso de conexion: aparece solo cuando hay un problema. -->
+    <app-estado-conexion />
     <p class="leyenda">
       El carrito se guarda en tu dispositivo: puedes cerrar la aplicacion y
       encontrarlo igual al volver.
@@ -30,6 +33,54 @@
             Ver el avance de mi solicitud
           </button>
         }
+      </div>
+    }
+
+    <!-- ================= Solicitudes en espera ================= -->
+    @if (hayPendientes()) {
+      <div class="pendientes">
+        <h3>
+          Solicitudes guardadas sin enviar
+          <span class="contador">{{ pendientes().length }}</span>
+        </h3>
+        <p class="explicacion">
+          Se guardaron en tu dispositivo porque no habia conexion. Se enviaran
+          en cuanto el servidor responda.
+        </p>
+
+        <ul>
+          @for (s of pendientes(); track s.id) {
+            <li>
+              <div class="datos">
+                <strong>{{ s.datos.items.length }} componente(s)</strong>
+                <span class="meta">{{ s.datos.direccion_instalacion }}</span>
+                <span class="meta">
+                  Guardada el {{ s.creada_en | date: 'dd/MM/yyyy HH:mm' }}
+                  @if (s.intentos) { &middot; {{ s.intentos }} intento(s) }
+                </span>
+                @if (s.ultimo_error) {
+                  <span class="meta error-linea">{{ s.ultimo_error }}</span>
+                }
+              </div>
+              <button
+                type="button"
+                class="mini peligro"
+                (click)="descartarPendiente(s.id)"
+              >
+                Descartar
+              </button>
+            </li>
+          }
+        </ul>
+
+        <button
+          type="button"
+          class="principal ancho"
+          [disabled]="sincronizando()"
+          (click)="enviarPendientes()"
+        >
+          {{ sincronizando() ? 'Enviando...' : 'Intentar enviar ahora' }}
+        </button>
       </div>
     }
 
@@ -184,8 +235,21 @@
               class="principal ancho"
               [disabled]="enviando() || !autenticado()"
             >
-              {{ enviando() ? 'Enviando...' : 'Enviar solicitud' }}
+              @if (enviando()) {
+                Enviando...
+              } @else if (!enLinea()) {
+                Guardar solicitud (sin conexion)
+              } @else {
+                Enviar solicitud
+              }
             </button>
+
+            @if (!enLinea()) {
+              <p class="nota-precio">
+                Sin conexion: tu solicitud se guardara en el dispositivo y se
+                enviara sola cuando vuelva la senal.
+              </p>
+            }
           </form>
         </div>
 

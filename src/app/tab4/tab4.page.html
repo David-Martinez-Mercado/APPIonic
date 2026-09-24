@@ -14,6 +14,9 @@
   <div class="contenedor">
     <h1 class="logo">Mis <span class="nombre-empresa">solicitudes</span></h1>
 
+    <!-- Aviso de conexion: aparece solo cuando hay un problema. -->
+    <app-estado-conexion [recargar]="recargarDatos" />
+
     @if (mensajeError()) {
       <p class="aviso error">{{ mensajeError() }}</p>
     }

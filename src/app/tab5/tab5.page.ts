@@ -3,6 +3,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
+import { EstadoConexionComponent } from '../components/estado-conexion.component';
 import { PedidoRepository } from '../services/pedido.repository';
 import { SesionService } from '../services/sesion.service';
 import {
@@ -32,6 +33,7 @@ import {
     IonToolbar,
     IonTitle,
     IonContent,
+    EstadoConexionComponent,
     FormsModule,
     CurrencyPipe,
     DatePipe,
@@ -104,6 +106,16 @@ export class Tab5Page implements OnInit {
       .filter((p) => !p.detenido)
       .reduce((suma, p) => suma + p.total, 0),
   );
+
+  /**
+   * Lo que se vuelve a pedir cuando el usuario pulsa "Reintentar".
+   *
+   * Es una propiedad y no un metodo normal porque se pasa como valor al
+   * componente del aviso: una funcion flecha conserva el "this" de la
+   * clase, mientras que un metodo suelto lo perderia al invocarse
+   * desde fuera.
+   */
+  recargarDatos = () => this.cargar();
 
   async ngOnInit() {
     // Igual que en la vista de pedidos: sin esperar la restauracion, el

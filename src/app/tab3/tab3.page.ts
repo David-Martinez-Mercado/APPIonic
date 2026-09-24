@@ -1,11 +1,14 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
 import { CarritoRepository } from '../services/carrito.repository';
 import { PedidoRepository } from '../services/pedido.repository';
 import { SesionService } from '../services/sesion.service';
+import { ConexionService } from '../services/conexion.service';
+import { PendientesRepository } from '../services/pendientes.repository';
+import { EstadoConexionComponent } from '../components/estado-conexion.component';
 import {
   ApiError,
   ItemCarrito,
@@ -31,12 +34,17 @@ import {
     IonContent,
     FormsModule,
     CurrencyPipe,
+    DatePipe,
+    EstadoConexionComponent,
   ],
 })
 export class Tab3Page implements OnInit {
   private carrito = inject(CarritoRepository);
+  //hacerlo con interface 
   private pedidos = inject(PedidoRepository);
   private sesion = inject(SesionService);
+  private conexion = inject(ConexionService);
+  private cola = inject(PendientesRepository);
   private router = inject(Router);
 
   /** El carrito vive en el repositorio; la vista solo lo lee. */
@@ -47,6 +55,14 @@ export class Tab3Page implements OnInit {
 
   usuario = this.sesion.usuario;
   autenticado = this.sesion.autenticado;
+
+  /** Estado de la conexion, para adaptar el texto del boton de envio. */
+  enLinea = this.conexion.enLinea;
+
+  /** Solicitudes que quedaron esperando a que vuelva la conexion. */
+  pendientes = this.cola.pendientes;
+  hayPendientes = this.cola.hayPendientes;
+  sincronizando = this.cola.sincronizando;
 
   // Signals: la app es zoneless, axios responde fuera de Angular.
   enviando = signal(false);
@@ -83,7 +99,14 @@ export class Tab3Page implements OnInit {
     // La sesion decide si se puede enviar la solicitud y precarga la
     // direccion del cliente, asi que hay que esperarla.
     await this.sesion.listo();
+    await this.cola.cargar();
     this.precargarDatosDelUsuario();
+
+    // Si quedaron solicitudes de una sesion sin conexion, se intenta
+    // mandarlas en cuanto se abre la vista.
+    if (this.hayPendientes()) {
+      await this.enviarPendientes();
+    }
   }
 
   // ------------------------------------------------------------
@@ -156,16 +179,19 @@ export class Tab3Page implements OnInit {
       return;
     }
 
+    // Se arma fuera del try para poder encolarla si falla la conexion.
+    const solicitud = {
+      usuario_id: usuario.id,
+      direccion_instalacion: this.form.direccion_instalacion.trim(),
+      ciudad: this.form.ciudad.trim() || undefined,
+      telefono_contacto: this.form.telefono_contacto.trim() || undefined,
+      notas_cliente: this.form.notas_cliente.trim() || undefined,
+      items: this.carrito.aItemsPedido(),
+    };
+
     this.enviando.set(true);
     try {
-      const pedido = await this.pedidos.crear({
-        usuario_id: usuario.id,
-        direccion_instalacion: this.form.direccion_instalacion.trim(),
-        ciudad: this.form.ciudad.trim() || undefined,
-        telefono_contacto: this.form.telefono_contacto.trim() || undefined,
-        notas_cliente: this.form.notas_cliente.trim() || undefined,
-        items: this.carrito.aItemsPedido(),
-      });
+      const pedido = await this.pedidos.crear(solicitud);
 
       // El carrito solo se vacia si el servidor confirmo: si fallara y
       // se hubiera vaciado antes, el cliente perderia su seleccion.
@@ -178,10 +204,54 @@ export class Tab3Page implements OnInit {
       this.form = { ...SOLICITUD_VACIA };
       this.precargarDatosDelUsuario();
     } catch (e) {
-      this.mostrarError(e);
+      // Un fallo de red (codigo 0) no es culpa de la solicitud: se
+      // guarda para mandarla en cuanto vuelva la conexion, en lugar de
+      // hacer que el cliente pierda todo lo que armo.
+      if (e instanceof ApiError && e.codigo === 0) {
+        await this.cola.encolar(solicitud);
+        await this.carrito.vaciar();
+
+        this.mensajeOk.set(
+          'Sin conexion: tu solicitud quedo guardada en el dispositivo y se ' +
+            'enviara automaticamente cuando vuelva la senal.',
+        );
+        this.form = { ...SOLICITUD_VACIA };
+        this.precargarDatosDelUsuario();
+      } else {
+        this.mostrarError(e);
+      }
     } finally {
       this.enviando.set(false);
     }
+  }
+
+  /** Reintenta enviar lo que quedo en la cola. */
+  async enviarPendientes() {
+    if (this.sincronizando()) {
+      return;
+    }
+
+    this.limpiarMensajes();
+    const r = await this.cola.sincronizarSiHayConexion();
+
+    if (r.enviadas) {
+      this.mensajeOk.set(
+        `Se enviaron ${r.enviadas} solicitud(es): ${r.folios.join(', ')}.`,
+      );
+    } else {
+      this.mensajeError.set(
+        'Sigue sin haber conexion con el servidor. Tus solicitudes se ' +
+          'conservan y puedes reintentar mas tarde.',
+      );
+    }
+  }
+
+  /** Descarta una solicitud pendiente que el cliente ya no quiere. */
+  async descartarPendiente(id: string) {
+    if (!confirm('Descartar esta solicitud guardada?')) {
+      return;
+    }
+    await this.cola.descartar(id);
   }
 
   // ------------------------------------------------------------
