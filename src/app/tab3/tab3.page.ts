@@ -7,6 +7,7 @@ import { CarritoRepository } from '../services/carrito.repository';
 import { PedidoRepository } from '../services/pedido.repository';
 import { SesionService } from '../services/sesion.service';
 import { ConexionService } from '../services/conexion.service';
+import { ServidorService } from '../services/servidor.service';
 import { PendientesRepository } from '../services/pendientes.repository';
 import { EstadoConexionComponent } from '../components/estado-conexion.component';
 import {
@@ -44,6 +45,7 @@ export class Tab3Page implements OnInit {
   private pedidos = inject(PedidoRepository);
   private sesion = inject(SesionService);
   private conexion = inject(ConexionService);
+  private servidor = inject(ServidorService);
   private cola = inject(PendientesRepository);
   private router = inject(Router);
 
@@ -93,6 +95,9 @@ export class Tab3Page implements OnInit {
   async ngOnInit() {
     // El carrito ya se cargo en la barra de pestanas al arrancar, pero
     // se vuelve a leer por si se entra directo a esta ruta.
+    // La direccion del servidor debe estar leida antes de enviar nada.
+    await this.servidor.listo();
+
     if (!this.cargado()) {
       await this.carrito.cargar();
     }

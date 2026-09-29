@@ -18,6 +18,7 @@ import {
 import { CarritoRepository } from '../services/carrito.repository';
 import { SesionService } from '../services/sesion.service';
 import { ConexionService } from '../services/conexion.service';
+import { ServidorService } from '../services/servidor.service';
 
 /**
  * Barra de navegacion.
@@ -36,6 +37,7 @@ export class TabsPage implements OnInit {
   private carrito = inject(CarritoRepository);
   private sesion = inject(SesionService);
   private conexion = inject(ConexionService);
+  private servidor = inject(ServidorService);
 
   /** Piezas en el carrito, para el globo del icono. */
   piezas = this.carrito.piezas;
@@ -64,6 +66,9 @@ export class TabsPage implements OnInit {
     // La deteccion de red se activa primero: si la aplicacion arranca
     // sin conexion, las vistas ya encuentran el estado correcto en vez
     // de intentar una peticion y fallar sin explicacion.
+    // La direccion del servidor va primero: todo lo demas la necesita
+    // para saber a donde pedir los datos.
+    await this.servidor.listo();
     await this.conexion.iniciar();
     await this.sesion.restaurar();
     await this.carrito.cargar();

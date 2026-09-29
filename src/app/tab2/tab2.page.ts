@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
 import { EstadoConexionComponent } from '../components/estado-conexion.component';
 import { ProductoRepository } from '../services/producto.repository';
+import { ServidorService } from '../services/servidor.service';
 import { CarritoRepository } from '../services/carrito.repository';
 import {
   ApiError,
@@ -37,6 +38,7 @@ import {
 export class Tab2Page implements OnInit {
   private repo = inject(ProductoRepository);
   private carrito = inject(CarritoRepository);
+  private servidor = inject(ServidorService);
 
   /** El catalogo vive en el repositorio; la vista solo lo lee. */
   productos = this.repo.productos;
@@ -94,6 +96,12 @@ export class Tab2Page implements OnInit {
   recargarDatos = () => this.cargar();
 
   async ngOnInit() {
+    // La direccion del servidor se espera antes de pedir nada: esta
+    // vista se monta en paralelo con la barra de pestanas, y sin
+    // esperar las peticiones saldrian a la direccion compilada en vez
+    // de a la que el usuario configuro.
+    await this.servidor.listo();
+
     // Primero lo que haya en el dispositivo, para pintar de inmediato;
     // luego se sincroniza con el servidor.
     await this.repo.cargarCache();

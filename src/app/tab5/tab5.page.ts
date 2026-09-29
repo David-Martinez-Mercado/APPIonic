@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
 import { EstadoConexionComponent } from '../components/estado-conexion.component';
 import { PedidoRepository } from '../services/pedido.repository';
+import { ServidorService } from '../services/servidor.service';
 import { SesionService } from '../services/sesion.service';
 import {
   ApiError,
@@ -42,6 +43,7 @@ import {
 export class Tab5Page implements OnInit {
   private repo = inject(PedidoRepository);
   private sesion = inject(SesionService);
+  private servidor = inject(ServidorService);
   private router = inject(Router);
 
   pedidos = this.repo.pedidos;
@@ -118,6 +120,8 @@ export class Tab5Page implements OnInit {
   recargarDatos = () => this.cargar();
 
   async ngOnInit() {
+    await this.servidor.listo();
+
     // Igual que en la vista de pedidos: sin esperar la restauracion, el
     // rol llega vacio y el panel se comporta como si no fuera admin.
     await this.sesion.listo();

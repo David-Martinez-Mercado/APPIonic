@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { environment } from '../../environments/environment';
 import { HttpService } from './http.service';
+import { ServidorService } from './servidor.service';
 import { StorageService } from './storage.service';
 import {
   Producto,
@@ -23,7 +23,12 @@ import {
 export class ProductoRepository {
   private http = inject(HttpService);
   private storage = inject(StorageService);
-  private readonly url = environment.productosUrl;
+  private servidor = inject(ServidorService);
+
+  /** Se lee en cada llamada: la direccion puede cambiar en caliente. */
+  private get url(): string {
+    return this.servidor.productosUrl();
+  }
 
   private static readonly CLAVE_CACHE = 'productos_cache';
   private static readonly CLAVE_SINCRO = 'productos_sincronizado';

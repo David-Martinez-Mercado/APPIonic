@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { environment } from '../../environments/environment';
 import { HttpService } from './http.service';
+import { ServidorService } from './servidor.service';
 import { StorageService } from './storage.service';
 import {
   Pedido,
@@ -21,7 +21,12 @@ import {
 export class PedidoRepository {
   private http = inject(HttpService);
   private storage = inject(StorageService);
-  private readonly url = environment.pedidosUrl;
+  private servidor = inject(ServidorService);
+
+  /** Se lee en cada llamada: la direccion puede cambiar en caliente. */
+  private get url(): string {
+    return this.servidor.pedidosUrl();
+  }
 
   private static readonly CLAVE_CACHE = 'pedidos_cache';
 

@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
 import { UsuarioRepository } from '../services/usuario.repository';
 import { SesionService } from '../services/sesion.service';
+import { ServidorService } from '../services/servidor.service';
 import { ApiError, Usuario, Credenciales, NuevoUsuario } from '../models';
 
 @Component({
@@ -14,6 +15,7 @@ import { ApiError, Usuario, Credenciales, NuevoUsuario } from '../models';
 export class Tab1Page implements OnInit {
   private repo = inject(UsuarioRepository);
   private sesion = inject(SesionService);
+  private servidor = inject(ServidorService);
 
   // Signals y no propiedades sueltas: la app es zoneless y estos valores
   // cambian despues de un await (al restaurar la sesion del dispositivo o al
@@ -41,7 +43,107 @@ export class Tab1Page implements OnInit {
    * se inicio sesion, aqui se recupera del dispositivo y la vista aparece
    * directamente en el estado autenticado, sin pedir credenciales de nuevo.
    */
+  // ------------------------------------------------------------
+  //  Conexion al servidor
+  // ------------------------------------------------------------
+
+  /** Direccion configurada, tal como la usan las peticiones. */
+  host = this.servidor.host;
+
+  /** Puertos, para mostrarlos en la pantalla. */
+  readonly puertoHttp = ServidorService.PUERTO_HTTP;
+  readonly puertoMysql = ServidorService.PUERTO_MYSQL;
+
+  /** El panel arranca plegado: solo estorba cuando ya esta configurado. */
+  configAbierta = signal(false);
+
+  /** Lo que el usuario escribe, sin aplicar hasta que guarda. */
+  hostEditado = '';
+
+  probando = signal(false);
+  mensajeServidor = signal('');
+
+  /** null = sin probar; true/false = resultado de la ultima prueba. */
+  probado = signal<boolean | null>(null);
+
+  alternarConfig() {
+    this.configAbierta.update((v) => !v);
+
+    // Al abrir se copia la direccion actual, para que el campo no
+    // aparezca vacio y se vea que se esta editando lo que ya hay.
+    if (this.configAbierta()) {
+      this.hostEditado = this.host();
+      this.mensajeServidor.set('');
+    }
+  }
+
+  /** Comprueba la direccion escrita sin guardarla todavia. */
+  async probarServidor() {
+    if (this.probando()) {
+      return;
+    }
+
+    this.probando.set(true);
+    this.mensajeServidor.set('');
+
+    try {
+      const r = await this.servidor.probar(this.hostEditado || this.host());
+      this.probado.set(r.ok);
+      this.mensajeServidor.set(r.mensaje);
+    } finally {
+      this.probando.set(false);
+    }
+  }
+
+  /**
+   * Guarda la direccion y la prueba.
+   *
+   * Se guarda aunque la prueba falle: puede que el servidor todavia no
+   * este encendido, y obligar a reescribir la IP cada vez seria peor
+   * que aceptarla y avisar de que aun no responde.
+   */
+  async guardarServidor() {
+    if (this.probando()) {
+      return;
+    }
+
+    this.probando.set(true);
+    this.mensajeServidor.set('');
+
+    try {
+      await this.servidor.guardar(this.hostEditado);
+
+      const r = await this.servidor.probar();
+      this.probado.set(r.ok);
+      this.mensajeServidor.set(
+        r.ok
+          ? `Direccion guardada. ${r.mensaje}`
+          : `Direccion guardada, pero ${r.mensaje.charAt(0).toLowerCase()}${r.mensaje.slice(1)}`,
+      );
+    } catch (e) {
+      this.probado.set(false);
+      this.mensajeServidor.set(
+        e instanceof Error ? e.message : 'No se pudo guardar la direccion.',
+      );
+    } finally {
+      this.probando.set(false);
+    }
+  }
+
+  async restablecerServidor() {
+    const predeterminado = await this.servidor.restablecer();
+
+    this.hostEditado = predeterminado;
+    this.probado.set(null);
+    this.mensajeServidor.set(`Direccion restablecida a ${predeterminado}.`);
+  }
+
   async ngOnInit() {
+    // La direccion del servidor se lee primero: si se dejo configurada
+    // otra IP, el resto de la aplicacion debe usarla desde el arranque.
+    await this.servidor.listo();
+    this.hostEditado = this.host();
+
     const guardado = await this.sesion.restaurar();
 
     if (guardado) {

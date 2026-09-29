@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { environment } from '../../environments/environment';
 import { HttpService } from './http.service';
+import { ServidorService } from './servidor.service';
 import { StorageService } from './storage.service';
 import {
   Usuario,
@@ -30,7 +30,18 @@ import {
 export class UsuarioRepository {
   private http = inject(HttpService);
   private storage = inject(StorageService);
-  private readonly url = environment.apiUrl;
+  private servidor = inject(ServidorService);
+
+  /**
+   * La URL se lee en cada llamada, no se guarda en una propiedad.
+   *
+   * El usuario puede cambiar la direccion del servidor desde la
+   * pantalla de acceso; con una propiedad calculada una sola vez al
+   * crear el servicio, las peticiones seguirian yendo a la anterior.
+   */
+  private get url(): string {
+    return this.servidor.usuariosUrl();
+  }
 
   /** Clave de la cache offline en el dispositivo. */
   private static readonly CLAVE_CACHE = 'usuarios_cache';

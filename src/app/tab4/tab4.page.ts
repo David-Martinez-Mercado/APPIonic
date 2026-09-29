@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
 import { EstadoConexionComponent } from '../components/estado-conexion.component';
 import { PedidoRepository } from '../services/pedido.repository';
+import { ServidorService } from '../services/servidor.service';
 import { SesionService } from '../services/sesion.service';
 import {
   ApiError,
@@ -37,6 +38,7 @@ import {
 export class Tab4Page implements OnInit {
   private repo = inject(PedidoRepository);
   private sesion = inject(SesionService);
+  private servidor = inject(ServidorService);
   private router = inject(Router);
 
   pedidos = this.repo.pedidos;
@@ -81,6 +83,10 @@ export class Tab4Page implements OnInit {
   recargarDatos = () => this.cargar();
 
   async ngOnInit() {
+    // Igual que con la sesion: la direccion del servidor debe estar
+    // leida antes de que salga la primera peticion.
+    await this.servidor.listo();
+
     // Se espera a que la sesion este leida del dispositivo: esta vista
     // se monta en paralelo con la barra de pestanas, y sin esperar
     // encontraria el usuario vacio aunque haya sesion guardada.

@@ -1,7 +1,7 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import { Network } from '@capacitor/network';
 import type { ConnectionStatus } from '@capacitor/network';
-import { environment } from '../../environments/environment';
+import { ServidorService } from './servidor.service';
 
 /**
  * Estado de la conexion.
@@ -24,6 +24,8 @@ import { environment } from '../../environments/environment';
  */
 @Injectable({ providedIn: 'root' })
 export class ConexionService {
+  private servidor = inject(ServidorService);
+
   /** Hay red segun el sistema operativo. */
   readonly hayRed = signal(true);
 
@@ -132,7 +134,9 @@ export class ConexionService {
     const temporizador = setTimeout(() => control.abort(), 4000);
 
     try {
-      await fetch(environment.pingUrl, {
+      // Se comprueba contra la direccion que el usuario configuro,
+      // no contra la que venia compilada.
+      await fetch(this.servidor.pingUrl(), {
         method: 'GET',
         signal: control.signal,
         cache: 'no-store',

@@ -13,6 +13,81 @@
     </ion-toolbar>
   </ion-header>
 
+  <!-- ================= Conexion al servidor =================
+       La aplicacion corre en un telefono y el servidor vive en otra
+       maquina de la red, asi que la direccion se escribe aqui en lugar
+       de quedar fija en el codigo. -->
+  <div class="panel-servidor">
+    <button type="button" class="cabecera-servidor" (click)="alternarConfig()">
+      <span class="punto" [class.ok]="probado() === true" [class.mal]="probado() === false"></span>
+      <span class="texto">
+        Servidor: <strong>{{ host() }}</strong>
+        <span class="puerto">:{{ puertoHttp }}</span>
+      </span>
+      <span class="flecha">{{ configAbierta() ? '▲' : '▼' }}</span>
+    </button>
+
+    @if (configAbierta()) {
+      <div class="cuerpo-servidor">
+        <p class="explicacion">
+          Escribe la direccion del equipo donde corre XAMPP. Ambos dispositivos
+          deben estar en la misma red.
+        </p>
+
+        <label for="host">Direccion IP o nombre del equipo</label>
+        <div class="fila-host">
+          <input
+            id="host"
+            type="text"
+            name="host"
+            inputmode="url"
+            autocomplete="off"
+            placeholder="192.168.1.195"
+            [(ngModel)]="hostEditado"
+            (keyup.enter)="guardarServidor()"
+          />
+          <span class="sufijo">:{{ puertoHttp }}</span>
+        </div>
+
+        <p class="nota-puerto">
+          Apache responde en el puerto <strong>{{ puertoHttp }}</strong>.
+          MySQL escucha en el <strong>{{ puertoMysql }}</strong>, pero la
+          aplicacion no se conecta ahi: lo hace el PHP desde el propio
+          servidor.
+        </p>
+
+        @if (mensajeServidor()) {
+          <p class="aviso-servidor" [class.error]="probado() === false" [class.ok]="probado() === true">
+            {{ mensajeServidor() }}
+          </p>
+        }
+
+        <div class="botones-servidor">
+          <button
+            type="button"
+            class="secundario"
+            [disabled]="probando()"
+            (click)="probarServidor()"
+          >
+            {{ probando() ? 'Probando...' : 'Probar conexion' }}
+          </button>
+          <button
+            type="button"
+            class="primario"
+            [disabled]="probando()"
+            (click)="guardarServidor()"
+          >
+            Guardar
+          </button>
+        </div>
+
+        <button type="button" class="restablecer" (click)="restablecerServidor()">
+          Volver a la direccion predeterminada
+        </button>
+      </div>
+    }
+  </div>
+
   <div class="stage">
     <div class="container" [class.log-in]="isLogIn()" [class.active]="isActive()">
       <div class="box"></div>
