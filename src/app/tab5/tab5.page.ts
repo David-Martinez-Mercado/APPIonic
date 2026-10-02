@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
 import { EstadoConexionComponent } from '../components/estado-conexion.component';
+import { ModalErrorComponent } from '../components/modal-error.component';
 import { PedidoRepository } from '../services/pedido.repository';
 import { ServidorService } from '../services/servidor.service';
 import { SesionService } from '../services/sesion.service';
@@ -35,6 +36,7 @@ import {
     IonTitle,
     IonContent,
     EstadoConexionComponent,
+    ModalErrorComponent,
     FormsModule,
     CurrencyPipe,
     DatePipe,
@@ -51,6 +53,14 @@ export class Tab5Page implements OnInit {
 
   cargando = signal(false);
   mensajeError = signal('');
+
+  /**
+   * Error completo para el modal de diagnostico.
+   *
+   * El aviso de la pantalla es corto; aqui queda el detalle tecnico
+   * (URL, payload, cabeceras) por si hace falta diagnosticar.
+   */
+  errorModal = signal<ApiError | null>(null);
   mensajeOk = signal('');
 
   /** Pedido abierto para gestionar. */
@@ -301,10 +311,27 @@ export class Tab5Page implements OnInit {
     this.router.navigateByUrl('/tabs/tab1');
   }
 
+  /** Cierra el modal del detalle tecnico. */
+  cerrarModal() {
+    this.errorModal.set(null);
+  }
+
+  /** Reintenta lo que fallo y cierra el modal. */
+  async reintentar() {
+    this.cerrarModal();
+    await this.cargar();
+  }
+
   private mostrarError(e: unknown) {
     const msg = e instanceof ApiError ? e.message : 'Ocurrio un error inesperado.';
     const codigo = e instanceof ApiError && e.codigo ? ` (codigo ${e.codigo})` : '';
     this.mensajeError.set(msg + codigo);
+
+    // Se guarda el error entero para que el modal pueda mostrar a
+    // donde se mando la peticion y que contesto el servidor.
+    if (e instanceof ApiError) {
+      this.errorModal.set(e);
+    }
   }
 
   private limpiarMensajes() {

@@ -172,11 +172,18 @@ export class EstadoConexionComponent {
     try {
       const hayServidor = await this.conexion.comprobar();
 
+      // Se recarga siempre, responda o no el servidor.
+      //
+      // Si solo se recargara cuando el ping funciona, un reintento
+      // fallido no haria nada visible: ni mensaje ni modal. Dejando
+      // que la peticion real falle, la pantalla recibe el ApiError
+      // con su diagnostico y puede mostrarlo.
+      const recarga = this.recargar();
+      if (recarga) {
+        await recarga();
+      }
+
       if (hayServidor) {
-        const recarga = this.recargar();
-        if (recarga) {
-          await recarga();
-        }
         this.avisarRecuperacion();
       }
     } finally {

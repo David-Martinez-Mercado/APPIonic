@@ -14,6 +14,7 @@ import {
   cartOutline,
   constructOutline,
   clipboardOutline,
+  serverOutline,
 } from 'ionicons/icons';
 import { CarritoRepository } from '../services/carrito.repository';
 import { SesionService } from '../services/sesion.service';
@@ -52,6 +53,7 @@ export class TabsPage implements OnInit {
       cartOutline,
       constructOutline,
       clipboardOutline,
+      serverOutline,
     });
   }
 

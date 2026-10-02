@@ -1,0 +1,315 @@
+@use "sass:color";
+
+// Misma paleta y convenciones que el resto de la aplicacion.
+$fuente-principal: 'Roboto', sans-serif;
+$color-principal: #455a64;
+$acento: #e08a1e;
+$verde: #1b7f4b;
+$bk1: 700px;
+
+$claro-50: color.adjust($color-principal, $lightness: 50%);
+$claro-55: color.adjust($color-principal, $lightness: 55%);
+$oscuro-15: color.adjust($color-principal, $lightness: -15%);
+
+ion-content {
+  --background: #fff;
+  --color: #{$color-principal};
+  font-family: $fuente-principal;
+  color: $color-principal;
+  line-height: 1.5;
+}
+
+.contenedor,
+.contenedor h1,
+.contenedor h3,
+.contenedor h4,
+.contenedor strong,
+.contenedor li,
+.contenedor span:not(.nombre-empresa),
+.contenedor p:not(.aviso) {
+  color: $color-principal;
+}
+
+.contenedor {
+  max-width: 900px;
+  margin: 0 auto 1rem;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 0.3rem;
+  font-size: 1.7rem;
+}
+
+.nombre-empresa {
+  color: $acento;
+}
+
+.leyenda {
+  text-align: center;
+  font-size: 0.85rem;
+  margin: 0 auto 1.3rem;
+  max-width: 560px;
+  opacity: 0.85;
+}
+
+// ---------------- Tarjetas ----------------
+.tarjeta {
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 0 0 10px 0 rgba($color-principal, 0.3);
+  margin-bottom: 1rem;
+  padding: 0.9rem;
+
+  h3 {
+    align-items: center;
+    border-bottom: 1px solid rgba($color-principal, 0.18);
+    display: flex;
+    font-size: 0.95rem;
+    gap: 0.5rem;
+    justify-content: space-between;
+    margin: 0 0 0.7rem;
+    padding-bottom: 0.35rem;
+  }
+
+  h4 {
+    font-size: 0.82rem;
+    margin: 0.9rem 0 0.35rem;
+    text-transform: uppercase;
+  }
+}
+
+// ---------------- Estado de la conexion ----------------
+.tarjeta.estado {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  justify-content: space-between;
+}
+
+.fila-estado {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+
+  strong {
+    display: block;
+    font-size: 0.9rem;
+  }
+
+  .meta {
+    font-size: 0.73rem;
+    opacity: 0.78;
+  }
+}
+
+// Semaforo: verde conectado, rojo cuando algo falla.
+.punto {
+  background-color: #b3261e;
+  border-radius: 50%;
+  flex-shrink: 0;
+  height: 11px;
+  width: 11px;
+
+  &.ok {
+    background-color: $verde;
+  }
+}
+
+// ---------------- Listas de datos ----------------
+.datos {
+  display: grid;
+  gap: 0.25rem 0.8rem;
+  grid-template-columns: auto 1fr;
+  margin: 0;
+
+  dt {
+    color: #78909c;
+    font-size: 0.78rem;
+  }
+
+  dd {
+    font-size: 0.8rem;
+    margin: 0;
+    min-width: 0;
+    // Las URLs son largas: deben cortarse en vez de desbordar.
+    overflow-wrap: anywhere;
+  }
+
+  &.cabeceras dt {
+    font-family: Consolas, monospace;
+    font-size: 0.73rem;
+  }
+}
+
+code {
+  background-color: #eceff1;
+  border-radius: 2px;
+  font-family: Consolas, monospace;
+  font-size: 0.77rem;
+  padding: 0.05rem 0.3rem;
+
+  // La IP y el puerto son lo que mas se consulta en esta pantalla.
+  &.destacado {
+    background-color: #fff4e5;
+    color: #8a5300;
+    font-weight: bold;
+  }
+
+  &.url {
+    overflow-wrap: anywhere;
+  }
+}
+
+.nota {
+  display: block;
+  font-size: 0.7rem;
+  font-style: italic;
+  opacity: 0.75;
+}
+
+// ---------------- Esquema de la conexion ----------------
+.esquema {
+  background-color: $claro-50;
+  border-radius: 4px;
+  margin-top: 0.9rem;
+  padding: 0.7rem;
+}
+
+.titulo-esquema {
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin: 0 0 0.4rem;
+}
+
+.diagrama {
+  color: $color-principal;
+  font-family: Consolas, monospace;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  margin: 0;
+  white-space: pre;
+}
+
+.nota-esquema {
+  font-size: 0.73rem;
+  margin: 0.5rem 0 0;
+  opacity: 0.85;
+}
+
+// ---------------- Endpoints ----------------
+.endpoints {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    border-bottom: 1px solid rgba($color-principal, 0.12);
+    padding: 0.5rem 0;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+.datos-endpoint {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+
+  strong {
+    font-size: 0.85rem;
+  }
+
+  .descripcion {
+    font-size: 0.74rem;
+    opacity: 0.8;
+  }
+
+  .url {
+    font-size: 0.73rem;
+    margin-top: 0.15rem;
+  }
+}
+
+// ---------------- JSON ----------------
+.json {
+  background-color: #263238;
+  border-radius: 3px;
+  color: #cfd8dc;
+  font-family: Consolas, monospace;
+  font-size: 0.74rem;
+  margin: 0 0 0.6rem;
+  max-height: 320px;
+  overflow: auto;
+  padding: 0.7rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+// ---------------- Botones ----------------
+.primario,
+.secundario {
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: $fuente-principal;
+  font-size: 0.84rem;
+  padding: 0.45rem 1rem;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.primario {
+  background-color: $color-principal;
+  border: 1px solid $color-principal;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background-color: $oscuro-15;
+  }
+}
+
+.secundario {
+  background: none;
+  border: 1px solid rgba($color-principal, 0.45);
+  color: $color-principal;
+}
+
+.alternar {
+  background: none;
+  border: none;
+  color: $acento;
+  cursor: pointer;
+  font-family: $fuente-principal;
+  font-size: 0.75rem;
+  padding: 0;
+  text-decoration: underline;
+  text-transform: none;
+}
+
+// ---------------- Avisos ----------------
+.aviso {
+  border-radius: 3px;
+  font-size: 0.82rem;
+  margin: 0 0 0.6rem;
+  padding: 0.55rem 0.7rem;
+
+  &.ok {
+    background-color: #e6f4ea;
+    border-left: 3px solid $verde;
+    color: #10603a;
+  }
+
+  &.error {
+    background-color: #fdecea;
+    border-left: 3px solid #b3261e;
+    color: #8c1d18;
+  }
+}

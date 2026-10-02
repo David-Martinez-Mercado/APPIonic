@@ -1,0 +1,177 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Origenes de datos</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Origenes de datos</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="contenedor">
+    <h1 class="logo">Origenes de <span class="nombre-empresa">datos</span></h1>
+    <p class="leyenda">
+      A donde apunta la aplicacion para pedir y guardar informacion.
+      Esta configuracion se guarda como JSON en el dispositivo.
+    </p>
+
+    <!-- ================= Estado actual ================= -->
+    <div class="tarjeta estado">
+      <div class="fila-estado">
+        <span class="punto" [class.ok]="enLinea()"></span>
+        <div>
+          <strong>
+            @if (enLinea()) {
+              Conectado al servidor
+            } @else if (!hayRed()) {
+              Sin red
+            } @else {
+              El servidor no responde
+            }
+          </strong>
+          @if (ultimoContacto()) {
+            <span class="meta">
+              Ultimo contacto: {{ ultimoContacto() | date: 'dd/MM/yyyy HH:mm:ss' }}
+            </span>
+          }
+        </div>
+      </div>
+
+      <button type="button" class="primario" [disabled]="probando()" (click)="probar()">
+        {{ probando() ? 'Probando...' : 'Probar conexion' }}
+      </button>
+    </div>
+
+    <!-- ================= Configuracion ================= -->
+    <div class="tarjeta">
+      <h3>Configuracion de conexion</h3>
+
+      <dl class="datos">
+        <dt>Protocolo</dt>
+        <dd><code>{{ origen().protocolo }}</code></dd>
+
+        <dt>Direccion IP / host</dt>
+        <dd><code class="destacado">{{ origen().host }}</code></dd>
+
+        <dt>Puerto HTTP (Apache)</dt>
+        <dd>
+          <code class="destacado">{{ origen().puertoHttp }}</code>
+          <span class="nota">por aqui viajan todas las peticiones</span>
+        </dd>
+
+        <dt>Puerto MySQL</dt>
+        <dd>
+          <code>{{ origen().puertoMysql }}</code>
+          <span class="nota">informativo: la app no se conecta aqui</span>
+        </dd>
+
+        <dt>Base de datos</dt>
+        <dd><code>{{ origen().baseDatos }}</code></dd>
+
+        <dt>Ruta de la API</dt>
+        <dd><code>{{ origen().rutaApi }}</code></dd>
+
+        <dt>Red del dispositivo</dt>
+        <dd>
+          {{ hayRed() ? 'Conectado' : 'Sin red' }}
+          @if (tipoRed() && tipoRed() !== 'unknown') { ({{ tipoRed() }}) }
+        </dd>
+
+        <dt>Actualizado</dt>
+        <dd>{{ origen().actualizado_en | date: 'dd/MM/yyyy HH:mm' }}</dd>
+      </dl>
+
+      <!-- Por que el 3306 no se usa desde la app. -->
+      <div class="esquema">
+        <p class="titulo-esquema">Como viajan los datos</p>
+        <pre class="diagrama">Telefono
+   |  HTTP, puerto {{ origen().puertoHttp }}
+   v
+Apache + PHP   ({{ origen().host }})
+   |  localhost, puerto {{ origen().puertoMysql }}
+   v
+MySQL ({{ origen().baseDatos }})</pre>
+        <p class="nota-esquema">
+          El telefono nunca habla con MySQL: lo hace el PHP desde el propio
+          servidor. Exponer el puerto {{ origen().puertoMysql }} a la red
+          abriria la base de datos a cualquiera que la alcance.
+        </p>
+      </div>
+    </div>
+
+    <!-- ================= Endpoints ================= -->
+    <div class="tarjeta">
+      <h3>Endpoints que consume la aplicacion</h3>
+
+      <ul class="endpoints">
+        @for (e of urls(); track e.archivo) {
+          <li>
+            <div class="datos-endpoint">
+              <strong>{{ e.nombre }}</strong>
+              <span class="descripcion">{{ e.descripcion }}</span>
+              <code class="url">{{ e.url }}</code>
+            </div>
+          </li>
+        }
+      </ul>
+    </div>
+
+    <!-- ================= Resultado de la prueba ================= -->
+    @if (resultado(); as r) {
+      <div class="tarjeta">
+        <h3>Ultima prueba de conexion</h3>
+
+        <p class="aviso" [class.ok]="r.ok" [class.error]="!r.ok">{{ r.mensaje }}</p>
+
+        <dl class="datos">
+          <dt>URL probada</dt>
+          <dd><code class="url">{{ r.url }}</code></dd>
+
+          @if (r.estado !== undefined) {
+            <dt>Estado HTTP</dt>
+            <dd><code>{{ r.estado }}</code></dd>
+          }
+
+          @if (r.ms !== undefined) {
+            <dt>Tiempo</dt>
+            <dd>{{ r.ms }} ms</dd>
+          }
+        </dl>
+
+        @if (cabeceras().length) {
+          <h4>Cabeceras de la respuesta</h4>
+          <dl class="datos cabeceras">
+            @for (c of cabeceras(); track c.clave) {
+              <dt>{{ c.clave }}</dt>
+              <dd><code>{{ c.valor }}</code></dd>
+            }
+          </dl>
+        }
+      </div>
+    }
+
+    <!-- ================= JSON crudo ================= -->
+    <div class="tarjeta">
+      <h3>
+        JSON guardado en el dispositivo
+        <button type="button" class="alternar" (click)="verJson.set(!verJson())">
+          {{ verJson() ? 'Ocultar' : 'Mostrar' }}
+        </button>
+      </h3>
+
+      @if (verJson()) {
+        <pre class="json">{{ origen() | json }}</pre>
+        <button type="button" class="secundario" (click)="copiarJson()">
+          Copiar JSON
+        </button>
+      } @else {
+        <p class="nota">
+          Clave <code>origen_datos</code> en el almacenamiento del dispositivo.
+        </p>
+      }
+    </div>
+  </div>
+</ion-content>

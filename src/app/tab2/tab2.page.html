@@ -153,4 +153,13 @@
       }
     </div>
   </div>
+
+  <!-- Detalle tecnico del fallo: a donde se mando la peticion, que se
+       envio y que contesto el servidor. -->
+  <app-modal-error
+    [error]="errorModal()"
+    [permiteReintentar]="true"
+    (cerrar)="cerrarModal()"
+    (reintentar)="reintentar()"
+  />
 </ion-content>

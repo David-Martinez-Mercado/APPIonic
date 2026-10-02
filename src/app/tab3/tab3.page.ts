@@ -10,6 +10,7 @@ import { ConexionService } from '../services/conexion.service';
 import { ServidorService } from '../services/servidor.service';
 import { PendientesRepository } from '../services/pendientes.repository';
 import { EstadoConexionComponent } from '../components/estado-conexion.component';
+import { ModalErrorComponent } from '../components/modal-error.component';
 import {
   ApiError,
   ItemCarrito,
@@ -37,6 +38,7 @@ import {
     CurrencyPipe,
     DatePipe,
     EstadoConexionComponent,
+    ModalErrorComponent,
   ],
 })
 export class Tab3Page implements OnInit {
@@ -69,6 +71,14 @@ export class Tab3Page implements OnInit {
   // Signals: la app es zoneless, axios responde fuera de Angular.
   enviando = signal(false);
   mensajeError = signal('');
+
+  /**
+   * Error completo para el modal de diagnostico.
+   *
+   * El aviso de la pantalla es corto; aqui queda el detalle tecnico
+   * (URL, payload, cabeceras) por si hace falta diagnosticar.
+   */
+  errorModal = signal<ApiError | null>(null);
   mensajeOk = signal('');
 
   /** Folio de la solicitud recien creada, para el mensaje de exito. */
@@ -291,10 +301,27 @@ export class Tab3Page implements OnInit {
     }
   }
 
+  /** Cierra el modal del detalle tecnico. */
+  cerrarModal() {
+    this.errorModal.set(null);
+  }
+
+  /** Reintenta el envio y cierra el modal. */
+  async reintentar() {
+    this.cerrarModal();
+    await this.enviar();
+  }
+
   private mostrarError(e: unknown) {
     const msg = e instanceof ApiError ? e.message : 'Ocurrio un error inesperado.';
     const codigo = e instanceof ApiError && e.codigo ? ` (codigo ${e.codigo})` : '';
     this.mensajeError.set(msg + codigo);
+
+    // Se guarda el error entero para que el modal pueda mostrar a
+    // donde se mando la peticion y que contesto el servidor.
+    if (e instanceof ApiError) {
+      this.errorModal.set(e);
+    }
   }
 
   private limpiarMensajes() {

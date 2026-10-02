@@ -29,8 +29,42 @@ export class ApiError extends Error {
     override message: string,
     public codigo: number,
     public detalles?: unknown,
+    /**
+     * Diagnostico tecnico de la peticion que fallo.
+     *
+     * Se adjunta para que las pantallas puedan mostrar en un modal a
+     * donde se mando la solicitud, que se envio y que contesto el
+     * servidor. Sin esto, un "no se pudo conectar" no dice si el
+     * problema es la IP configurada, el payload o el servidor.
+     */
+    public diagnostico?: DiagnosticoPeticion,
   ) {
     super(message);
     this.name = 'ApiError';
   }
+}
+
+/** Todo lo que se sabe de una peticion, para poder diagnosticarla. */
+export interface DiagnosticoPeticion {
+  /** URL completa a la que se mando. Incluye la IP configurada. */
+  url: string;
+  metodo: string;
+  /** Lo que se envio en el cuerpo, si lo hubo. */
+  payload?: unknown;
+  /** Codigo HTTP. Ausente si la peticion no llego a tener respuesta. */
+  estado?: number;
+  /** Cabeceras que devolvio el servidor. */
+  cabeceras?: Record<string, string>;
+  /** Cuerpo crudo de la respuesta de error. */
+  respuesta?: unknown;
+  /** Cuanto tardo, en milisegundos. */
+  ms?: number;
+  /** Momento del intento, ISO 8601. */
+  fecha: string;
+  /** Si habia red segun el sistema operativo. */
+  hayRed?: boolean;
+  /** Tipo de conexion: wifi, cellular... */
+  tipoRed?: string;
+  /** Cuantos reintentos se hicieron antes de rendirse. */
+  intentos?: number;
 }
