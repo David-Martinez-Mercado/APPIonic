@@ -217,6 +217,7 @@ El detalle está en `docs/RESILIENCIA.md`.
 | `docs/RESILIENCIA.md` | Manejo de errores y funcionamiento sin conexión |
 | `docs/CONEXION-SERVIDOR.md` | Configuración de la IP del servidor desde la app |
 | `docs/Entrega5-Diagnostico.docx` | Documento de la quinta entrega |
+| `docs/Entrega6-Arquitectura.docx` | Arquitectura Cliente-API-Base de datos |
 | `docs/Entrega4-Resiliencia.docx` | Documento de la cuarta entrega |
 | `docs/MODELO-DATOS.md` | Modelo de datos y capa de acceso |
 | `docs/PROMPTS-IA.md` | Prompts usados durante el desarrollo |
