@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
 import { EstadoConexionComponent } from '../components/estado-conexion.component';
 import { ModalErrorComponent } from '../components/modal-error.component';
+import { CargandoComponent } from '../components/cargando.component';
 import { ProductoRepository } from '../services/producto.repository';
 import { ServidorService } from '../services/servidor.service';
 import { CarritoRepository } from '../services/carrito.repository';
@@ -35,6 +36,8 @@ import {
     FormsModule,
     CurrencyPipe,
     DatePipe,
+  
+    CargandoComponent,
   ],
 })
 export class Tab2Page implements OnInit {
@@ -106,6 +109,12 @@ export class Tab2Page implements OnInit {
   recargarDatos = () => this.cargar();
 
   async ngOnInit() {
+    // El indicador se enciende antes de los awaits de preparacion. Si
+    // se encendiera solo al lanzar la peticion, la pantalla quedaria
+    // vacia y sin señal mientras se lee el dispositivo y se resuelve
+    // la direccion del servidor.
+    this.cargando.set(true);
+
     // La direccion del servidor se espera antes de pedir nada: esta
     // vista se monta en paralelo con la barra de pestanas, y sin
     // esperar las peticiones saldrian a la direccion compilada en vez

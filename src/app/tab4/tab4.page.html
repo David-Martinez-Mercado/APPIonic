@@ -44,7 +44,7 @@
     @if (autenticado()) {
 
       @if (cargando() && !pedidos().length) {
-        <p class="vacio">Cargando tus solicitudes...</p>
+        <app-cargando mensaje="Cargando tus solicitudes..." />
       }
 
       @if (!cargando() && !pedidos().length) {

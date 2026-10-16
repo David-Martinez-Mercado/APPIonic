@@ -69,7 +69,7 @@
       </div>
 
       @if (cargando() && !pedidos().length) {
-        <p class="vacio">Cargando solicitudes...</p>
+        <app-cargando mensaje="Cargando solicitudes..." />
       }
 
       @if (!cargando() && !pedidos().length) {

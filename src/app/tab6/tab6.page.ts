@@ -3,6 +3,7 @@ import { DatePipe, JsonPipe } from '@angular/common';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
 import { ServidorService, ResultadoPrueba } from '../services/servidor.service';
 import { ConexionService } from '../services/conexion.service';
+import { CargandoComponent } from '../components/cargando.component';
 import { ENDPOINTS } from '../models';
 
 /**
@@ -21,7 +22,7 @@ import { ENDPOINTS } from '../models';
   selector: 'app-tab6',
   templateUrl: 'tab6.page.html',
   styleUrls: ['tab6.page.scss'],
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent, DatePipe, JsonPipe],
+  imports: [IonHeader, IonToolbar, IonTitle, IonContent, DatePipe, JsonPipe, CargandoComponent],
 })
 export class Tab6Page implements OnInit {
   private servidor = inject(ServidorService);

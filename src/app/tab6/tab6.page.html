@@ -40,9 +40,14 @@
         </div>
       </div>
 
-      <button type="button" class="primario" [disabled]="probando()" (click)="probar()">
-        {{ probando() ? 'Probando...' : 'Probar conexion' }}
-      </button>
+      <div class="acciones-estado">
+        @if (probando()) {
+          <app-cargando mensaje="Probando..." [enLinea]="true" />
+        }
+        <button type="button" class="primario" [disabled]="probando()" (click)="probar()">
+          {{ probando() ? 'Probando...' : 'Probar conexion' }}
+        </button>
+      </div>
     </div>
 
     <!-- ================= Configuracion ================= -->

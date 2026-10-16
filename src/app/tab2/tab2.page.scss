@@ -332,3 +332,16 @@ ion-content {
   margin-bottom: 0.9rem;
   padding: 0.55rem 0.7rem;
 }
+
+// El contador y el indicador de refresco comparten fila: asi el
+// spinner no empuja la rejilla hacia abajo al aparecer.
+.fila-contador {
+  align-items: center;
+  display: flex;
+  gap: 0.8rem;
+  justify-content: space-between;
+
+  .contador {
+    margin-bottom: 0;
+  }
+}

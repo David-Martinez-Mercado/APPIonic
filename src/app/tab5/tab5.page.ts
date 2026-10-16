@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
 import { EstadoConexionComponent } from '../components/estado-conexion.component';
 import { ModalErrorComponent } from '../components/modal-error.component';
+import { CargandoComponent } from '../components/cargando.component';
 import { PedidoRepository } from '../services/pedido.repository';
 import { ServidorService } from '../services/servidor.service';
 import { SesionService } from '../services/sesion.service';
@@ -40,6 +41,8 @@ import {
     FormsModule,
     CurrencyPipe,
     DatePipe,
+  
+    CargandoComponent,
   ],
 })
 export class Tab5Page implements OnInit {
@@ -130,6 +133,11 @@ export class Tab5Page implements OnInit {
   recargarDatos = () => this.cargar();
 
   async ngOnInit() {
+    // El indicador se enciende antes de los awaits de preparacion:
+    // si no, la pantalla queda vacia y sin señal mientras se lee
+    // el dispositivo.
+    this.cargando.set(true);
+
     await this.servidor.listo();
 
     // Igual que en la vista de pedidos: sin esperar la restauracion, el

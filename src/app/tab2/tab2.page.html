@@ -71,8 +71,10 @@
       </div>
     </div>
 
+    <!-- Indicador de carga: solo cuando no hay nada que mostrar. Si ya
+         hay catalogo en pantalla, se refresca sin tapar lo que se ve. -->
     @if (cargando() && !productos().length) {
-      <p class="vacio">Cargando catalogo...</p>
+      <app-cargando mensaje="Cargando catalogo..." />
     }
 
     @if (!cargando() && !visibles().length) {
@@ -85,9 +87,16 @@
     }
 
     @if (visibles().length) {
-      <p class="contador">
-        Mostrando {{ visibles().length }} de {{ totalCatalogo() }} producto(s)
-      </p>
+      <div class="fila-contador">
+        <p class="contador">
+          Mostrando {{ visibles().length }} de {{ totalCatalogo() }} producto(s)
+        </p>
+        <!-- Refresco con contenido ya en pantalla: el indicador va en
+             linea para no desplazar la rejilla. -->
+        @if (cargando()) {
+          <app-cargando mensaje="Actualizando..." [enLinea]="true" />
+        }
+      </div>
     }
 
     <!-- ================= Rejilla de productos ================= -->

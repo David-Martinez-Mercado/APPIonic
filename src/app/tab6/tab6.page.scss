@@ -313,3 +313,10 @@ code {
     color: #8c1d18;
   }
 }
+
+// Boton de probar y su indicador, en la misma fila.
+.acciones-estado {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+}
