@@ -218,6 +218,7 @@ El detalle está en `docs/RESILIENCIA.md`.
 | `docs/CONEXION-SERVIDOR.md` | Configuración de la IP del servidor desde la app |
 | `docs/Entrega5-Diagnostico.docx` | Documento de la quinta entrega |
 | `docs/Entrega6-Arquitectura.docx` | Arquitectura Cliente-API-Base de datos |
+| `docs/Entrega7-ConsumoAPI.docx` | Consumo de API REST desde Ionic |
 | `docs/Entrega4-Resiliencia.docx` | Documento de la cuarta entrega |
 | `docs/MODELO-DATOS.md` | Modelo de datos y capa de acceso |
 | `docs/PROMPTS-IA.md` | Prompts usados durante el desarrollo |
