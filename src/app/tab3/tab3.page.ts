@@ -2,7 +2,14 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
+import {
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonButtons,
+} from '@ionic/angular';
+import { IndicadorEstadoComponent } from '../components/indicador-estado.component';
 import { CarritoRepository } from '../services/carrito.repository';
 import { PedidoRepository } from '../services/pedido.repository';
 import { SesionService } from '../services/sesion.service';
@@ -39,6 +46,9 @@ import {
     DatePipe,
     EstadoConexionComponent,
     ModalErrorComponent,
+  
+    IonButtons,
+    IndicadorEstadoComponent,
   ],
 })
 export class Tab3Page implements OnInit {

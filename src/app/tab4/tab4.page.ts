@@ -1,7 +1,14 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
-import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
+import {
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonButtons,
+} from '@ionic/angular';
+import { IndicadorEstadoComponent } from '../components/indicador-estado.component';
 import { EstadoConexionComponent } from '../components/estado-conexion.component';
 import { ModalErrorComponent } from '../components/modal-error.component';
 import { CargandoComponent } from '../components/cargando.component';
@@ -38,6 +45,9 @@ import {
     DatePipe,
   
     CargandoComponent,
+  
+    IonButtons,
+    IndicadorEstadoComponent,
   ],
 })
 export class Tab4Page implements OnInit {

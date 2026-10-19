@@ -32,6 +32,33 @@ export class PendientesRepository {
   /** true mientras se esta intentando vaciar la cola. */
   readonly sincronizando = signal(false);
 
+  /** Resultado de la ultima sincronizacion automatica, para avisar. */
+  readonly ultimaSincronizacion = signal<ResultadoSincronizacion | null>(null);
+
+  constructor() {
+    // Cuando vuelve la red se intenta vaciar la cola sola, sin esperar
+    // a que el usuario entre al carrito. Antes, una solicitud guardada
+    // sin conexion podia quedarse ahi indefinidamente si el cliente no
+    // volvia a esa pantalla.
+    this.conexion.alVolverLaConexion(async () => {
+      // Se lee el disco ANTES de decidir si hay trabajo. El servicio
+      // puede acabar de crearse, o el usuario puede haber navegado a
+      // otra vista: en esos casos la memoria esta vacia aunque el
+      // dispositivo tenga solicitudes guardadas, y preguntar primero
+      // por la memoria haria salir sin hacer nada.
+      await this.cargar();
+
+      if (!this.hayPendientes()) {
+        return;
+      }
+
+      const r = await this.sincronizarSiHayConexion();
+      if (r.enviadas) {
+        this.ultimaSincronizacion.set(r);
+      }
+    });
+  }
+
   // ------------------------------------------------------------
   //  READ
   // ------------------------------------------------------------

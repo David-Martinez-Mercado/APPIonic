@@ -1,6 +1,13 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { DatePipe, JsonPipe } from '@angular/common';
-import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular';
+import {
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonButtons,
+} from '@ionic/angular';
+import { IndicadorEstadoComponent } from '../components/indicador-estado.component';
 import { ServidorService, ResultadoPrueba } from '../services/servidor.service';
 import { ConexionService } from '../services/conexion.service';
 import { CargandoComponent } from '../components/cargando.component';
@@ -22,7 +29,7 @@ import { ENDPOINTS } from '../models';
   selector: 'app-tab6',
   templateUrl: 'tab6.page.html',
   styleUrls: ['tab6.page.scss'],
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent, DatePipe, JsonPipe, CargandoComponent],
+  imports: [IonHeader, IonToolbar, IonTitle, IonContent, DatePipe, JsonPipe, CargandoComponent, IonButtons, IndicadorEstadoComponent],
 })
 export class Tab6Page implements OnInit {
   private servidor = inject(ServidorService);

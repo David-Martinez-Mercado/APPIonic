@@ -1,6 +1,11 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-title>Origenes de datos</ion-title>
+    <!-- Estado de la conexion, siempre visible: confirma que la
+         aplicacion esta sincronizada, no solo avisa cuando falla. -->
+    <ion-buttons slot="end">
+      <app-indicador-estado />
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 

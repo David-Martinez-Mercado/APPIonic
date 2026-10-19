@@ -43,6 +43,17 @@ export class ConexionService {
   /** Momento del ultimo contacto correcto con la API. */
   readonly ultimoContacto = signal<Date | null>(null);
 
+  /**
+   * Quienes quieren enterarse de que volvio la conexion.
+   *
+   * Se usa una lista de funciones en lugar de inyectar aqui los
+   * repositorios que necesitan sincronizar: ConexionService es una
+   * capa base y no debe conocer a quienes la usan. Si lo hiciera,
+   * PendientesRepository dependeria de el y el de PendientesRepository,
+   * una dependencia circular que Angular no puede resolver.
+   */
+  private readonly alRecuperar: (() => void | Promise<void>)[] = [];
+
   /** true cuando se puede trabajar contra el servidor. */
   readonly enLinea = computed(() => this.hayRed() && this.servidorResponde());
 
@@ -91,8 +102,49 @@ export class ConexionService {
       // peticion lo resolvera.
       if (nuevo.connected) {
         this.servidorResponde.set(true);
+
+        // Volvio la red: se avisa a quien tenga trabajo pendiente.
+        // Sin esto, lo que quedo sin enviar espera a que el usuario
+        // entre a la pantalla correcta, que puede no ocurrir nunca.
+        this.avisarRecuperacion();
       }
     });
+  }
+
+  /**
+   * Registra algo que hacer cuando vuelva la conexion.
+   *
+   * Devuelve una funcion para darse de baja, aunque en esta aplicacion
+   * los suscriptores viven lo que vive la aplicacion.
+   */
+  alVolverLaConexion(accion: () => void | Promise<void>): () => void {
+    this.alRecuperar.push(accion);
+
+    return () => {
+      const i = this.alRecuperar.indexOf(accion);
+      if (i >= 0) {
+        this.alRecuperar.splice(i, 1);
+      }
+    };
+  }
+
+  /**
+   * Ejecuta a los suscriptores.
+   *
+   * Cada uno se envuelve en su propio catch: si uno falla, los demas
+   * deben seguir corriendo igualmente.
+   */
+  private avisarRecuperacion(): void {
+    for (const accion of this.alRecuperar) {
+      try {
+        const r = accion();
+        if (r instanceof Promise) {
+          r.catch(() => undefined);
+        }
+      } catch {
+        // Un suscriptor roto no puede impedir que se avise al resto.
+      }
+    }
   }
 
   /** Lo llama HttpService cuando una peticion sale bien. */
