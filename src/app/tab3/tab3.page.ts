@@ -18,6 +18,7 @@ import { ServidorService } from '../services/servidor.service';
 import { PendientesRepository } from '../services/pendientes.repository';
 import { EstadoConexionComponent } from '../components/estado-conexion.component';
 import { ModalErrorComponent } from '../components/modal-error.component';
+import { SimuladorSolarComponent } from '../components/simulador-solar.component';
 import {
   ApiError,
   ItemCarrito,
@@ -49,6 +50,7 @@ import {
   
     IonButtons,
     IndicadorEstadoComponent,
+    SimuladorSolarComponent,
   ],
 })
 export class Tab3Page implements OnInit {

@@ -67,6 +67,21 @@ ion-content {
   }
 }
 
+// ---------------- Simulacion: fila completa ----------------
+// En pantalla ancha el wrapper es una reticula de dos columnas. El
+// simulador es un tercer hijo, asi que sin esto caeria en la columna
+// izquierda de una segunda fila y dejaria un hueco junto al
+// formulario. Ocupando las dos columnas queda como una banda propia.
+.panel-simulador {
+  padding: 1rem;
+  background-color: #fff;
+  border-top: 1px solid rgba($color-principal, 0.15);
+
+  @media screen and (min-width: $bk1) {
+    grid-column: 1 / -1;
+  }
+}
+
 // ---------------- Panel izquierdo: lineas ----------------
 .panel-lista {
   padding: 1rem;

@@ -24,6 +24,9 @@ export class CarritoRepository {
 
   private static readonly CLAVE = 'carrito';
 
+  /** Cache del catalogo, la misma que escribe ProductoRepository. */
+  private static readonly CLAVE_CATALOGO = 'productos_cache';
+
   /** Contenido del carrito. La vista lo lee directo. */
   readonly items = signal<ItemCarrito[]>([]);
 
@@ -65,11 +68,46 @@ export class CarritoRepository {
   /** Lee el carrito guardado. Se llama al arrancar la aplicacion. */
   async cargar(): Promise<ItemCarrito[]> {
     const guardado = await this.storage.obtener<ItemCarrito[]>(CarritoRepository.CLAVE);
-    const items = guardado ?? [];
+    const items = await this.completarPotencias(guardado ?? []);
 
     this.items.set(items);
     this.cargado.set(true);
     return items;
+  }
+
+  /**
+   * Rellena la potencia de las lineas guardadas antes de que el
+   * carrito la copiara.
+   *
+   * Un carrito que ya estaba en el dispositivo no tiene potencia_w, y
+   * sin ese dato el simulador mostraria cero generacion para un
+   * proyecto que si tiene paneles. Se toma de la cache del catalogo,
+   * que es la misma que permite navegar sin conexion.
+   *
+   * Se lee la clave directo en lugar de inyectar ProductoRepository: el
+   * carrito es una entidad local y no debe depender de la que habla con
+   * la API.
+   */
+  private async completarPotencias(items: ItemCarrito[]): Promise<ItemCarrito[]> {
+    const faltan = items.some((i) => i.potencia_w === undefined);
+    if (!faltan) {
+      return items;
+    }
+
+    const catalogo =
+      (await this.storage.obtener<Producto[]>(CarritoRepository.CLAVE_CATALOGO)) ?? [];
+
+    const porId = new Map(catalogo.map((p) => [p.id, p.potencia_w]));
+
+    const completados = items.map((i) =>
+      i.potencia_w === undefined
+        ? { ...i, potencia_w: porId.get(i.producto_id) ?? null }
+        : i,
+    );
+
+    // Se guarda ya completo para no repetir esto en cada arranque.
+    await this.storage.guardar(CarritoRepository.CLAVE, completados);
+    return completados;
   }
 
   /** Cuantas unidades de un producto hay en el carrito. */
@@ -114,6 +152,7 @@ export class CarritoRepository {
       imagen_url: producto.imagen_url,
       unidad: producto.unidad,
       categoria: producto.categoria,
+      potencia_w: producto.potencia_w,
       cantidad,
       agregado_en: new Date().toISOString(),
     };

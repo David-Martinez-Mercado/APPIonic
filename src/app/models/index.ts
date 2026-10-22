@@ -8,5 +8,6 @@ export * from './usuario.model';
 export * from './producto.model';
 export * from './pedido.model';
 export * from './carrito.model';
+export * from './simulacion.model';
 export * from './origen-datos.model';
 export * from './respuesta-api.model';

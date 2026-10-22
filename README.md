@@ -37,9 +37,10 @@ Las transiciones válidas las decide el servidor: no se puede saltar de *solicit
 |---|-------|------|-------------|
 | 1 | **Acceso** | `/tabs/tab1` | Inicio de sesión y registro. La sesión sobrevive al cierre de la app. |
 | 2 | **Catálogo** | `/tabs/tab2` | Productos con foto, precio y existencias. Filtros por categoría y buscador. Funciona sin conexión. |
-| 3 | **Carrito** | `/tabs/tab3` | El proyecto en construcción, guardado en el dispositivo. Desde aquí se envía la solicitud. |
+| 3 | **Carrito** | `/tabs/tab3` | El proyecto en construcción, guardado en el dispositivo. Incluye el **simulador de generación y ahorro**. Desde aquí se envía la solicitud. |
 | 4 | **Mis pedidos** | `/tabs/tab4` | Seguimiento: barra de avance, fechas, componentes e historial de cada solicitud. |
 | 5 | **Admin** | `/tabs/tab5` | Solo para el rol `admin`. Aprobar, rechazar, agendar y registrar notas técnicas. |
+| 6 | **Orígenes** | `/tabs/tab6` | A dónde apunta la app: IP, puertos, protocolo y prueba de conexión. |
 
 La pestaña de administración **solo existe si el usuario que inició sesión es
 administrador**; para un cliente no aparece.
@@ -84,6 +85,7 @@ src/app/
 │   ├── producto.model.ts
 │   ├── pedido.model.ts
 │   ├── carrito.model.ts
+│   ├── simulacion.model.ts       Cálculo de generación y ahorro
 │   └── respuesta-api.model.ts
 ├── services/
 │   ├── http.service.ts           Transporte HTTP (axios) — no sabe de entidades
@@ -95,7 +97,14 @@ src/app/
 │   ├── producto.repository.ts    Catálogo + caché offline
 │   ├── pedido.repository.ts      Pedidos y cambios de estado
 │   └── carrito.repository.ts     Carrito 100% local
-├── tab1/ … tab5/                 Las cinco vistas
+├── components/                   Componentes reutilizables
+│   ├── grafica-solar.component.ts      Gráfica SVG de doce barras
+│   ├── simulador-solar.component.ts    Cifras, cobertura y control
+│   ├── indicador-estado.component.ts   Semáforo de conexión
+│   ├── estado-conexion.component.ts    Aviso grande de fallo
+│   ├── modal-error.component.ts        Detalle técnico del error
+│   └── cargando.component.ts           Indicador de carga
+├── tab1/ … tab6/                 Las seis vistas
 └── tabs/                         Barra de navegación
 ```
 
@@ -193,6 +202,31 @@ Todas las respuestas usan la misma envoltura:
 
 ---
 
+## Simulador de generación y ahorro
+
+Dentro del carrito, la aplicación calcula **qué produce el proyecto que el cliente
+está armando**: no basta con decirle cuánto cuesta un sistema solar, hay que decirle
+cuánto va a dejar de pagar.
+
+- **Cuatro cifras**: potencia instalada (kWp), generación anual (kWh), ahorro anual
+  y años para recuperar la inversión.
+- **Gráfica de doce barras** dibujada en SVG, con la línea de consumo superpuesta.
+  Al tocar un mes se muestran su generación, consumo, ahorro y horas de sol.
+- **Control de consumo mensual**: es el único dato que la app no puede conocer, así
+  que se le pide al cliente. Al moverlo se recalcula todo al instante.
+- **Veredicto escrito**, que también avisa si el sistema quedó sobredimensionado.
+
+El cálculo usa las horas solares pico de Durango mes a mes y un factor de rendimiento
+de 0.78, y ocurre **íntegramente en el dispositivo**: el simulador funciona sin
+conexión, igual que el carrito.
+
+Si el proyecto no incluye estructura, inversor o instalación, se advierte que el
+retorno mostrado es optimista, porque esas piezas son cerca de la mitad del costo real.
+
+El detalle está en `docs/Entrega9-Multimedia.docx`.
+
+---
+
 ## Funcionamiento sin conexión
 
 La aplicación detecta si hay red y si el servidor responde, y lo distingue: «sin
@@ -220,6 +254,7 @@ El detalle está en `docs/RESILIENCIA.md`.
 | `docs/Entrega6-Arquitectura.docx` | Arquitectura Cliente-API-Base de datos |
 | `docs/Entrega7-ConsumoAPI.docx` | Consumo de API REST desde Ionic |
 | `docs/Entrega8-Sincronizacion.docx` | Sincronización de información local y remota |
+| `docs/Entrega9-Multimedia.docx` | Elemento multimedia: el simulador y su gráfica |
 | `docs/Entrega4-Resiliencia.docx` | Documento de la cuarta entrega |
 | `docs/MODELO-DATOS.md` | Modelo de datos y capa de acceso |
 | `docs/PROMPTS-IA.md` | Prompts usados durante el desarrollo |

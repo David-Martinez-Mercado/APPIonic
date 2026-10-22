@@ -18,6 +18,14 @@ export interface ItemCarrito {
   imagen_url: string | null;
   unidad: string;
   categoria: string;
+  /**
+   * Watts del producto; null en lo que no genera ni almacena.
+   *
+   * Se copia junto al precio para poder simular la generacion sin
+   * volver a pedir el catalogo, igual que se copia el nombre para
+   * poder pintar el carrito sin conexion.
+   */
+  potencia_w: number | null;
   cantidad: number;
   /** ISO 8601. Sirve para ordenar por lo ultimo agregado. */
   agregado_en: string;
