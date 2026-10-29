@@ -1,6 +1,9 @@
 {
 	"appId": "io.ionic.demo.pg.cap.ng",
-	"appName": "Photo Gallery Cap Ng",
+	"appName": "SolarApp",
 	"npmClient": "npm",
-	"webDir": "www"
+	"webDir": "www",
+	"server": {
+		"cleartext": true
+	}
 }

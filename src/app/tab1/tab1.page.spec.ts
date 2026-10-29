@@ -39,6 +39,12 @@ describe('Tab1Page', () => {
   };
 
   beforeEach(async () => {
+    // La vista restaura la sesion guardada en su ngOnInit. Entre tests
+    // ese almacenamiento persiste, asi que un test que inicia sesion
+    // dejaba a los siguientes arrancando ya autenticados y con la
+    // palomita puesta. Se limpia antes de montar el componente.
+    localStorage.clear();
+
     // Se simula el servicio para no pegarle a XAMPP durante los tests
     api = jasmine.createSpyObj<UsuarioRepository>('UsuarioRepository', ['login', 'crear']);
     api.login.and.resolveTo(USUARIO_DEMO);
@@ -123,7 +129,12 @@ describe('Tab1Page', () => {
     await click('.container-form .btn');
 
     expect(container().classList.contains('active')).toBeFalse();
-    expect(texto('.form-item.log-in .error')).toBe('Usuario o contrasena incorrectos.');
+    // Desde la entrega de diagnostico, el motivo del fallo se muestra
+    // dentro del panel dinamico (.dg-detalle) en lugar del parrafo
+    // suelto; ese parrafo solo aparece cuando no hay diagnostico.
+    expect(texto('.form-item.log-in .dg-detalle'))
+      .toBe('Usuario o contrasena incorrectos.');
+    expect(component.mensajeError()).toBe('Usuario o contrasena incorrectos.');
   });
 
   it('avisa cuando el servidor no responde', async () => {

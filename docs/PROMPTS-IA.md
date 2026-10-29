@@ -332,6 +332,195 @@ en una carpeta que no es un proyecto.
 
 ---
 
+## Prompt 5 — Persistencia local con Capacitor Preferences
+
+### Prompt utilizado
+
+> "Analiza el código e implementa persistencia local: guardar datos en el
+> dispositivo, que sobrevivan al cierre de la aplicación, con operaciones CRUD
+> completas."
+
+### Qué se aceptó
+
+El envoltorio sobre `@capacitor/preferences` (`StorageService`) y el patrón de
+repositorio con *signals*: la vista lee el signal y el repositorio escribe en
+disco antes de terminar cada operación.
+
+### Qué hubo que corregir
+
+La primera versión perdía datos cuando el JSON guardado estaba corrupto: un
+`JSON.parse` sin protección tumbaba toda la carga. Se agregó recuperación, de
+modo que una clave dañada se descarta sin arrastrar al resto.
+
+### Aprendizaje
+
+Que un dato esté en disco no significa que se pueda leer. Toda lectura de
+almacenamiento necesita decidir qué hacer cuando lo guardado no sirve.
+
+---
+
+## Prompt 6 — Resiliencia y manejo de errores de red
+
+### Prompt utilizado
+
+> "Implementa detección de conexión, manejo de errores, caché, prueba sin
+> conexión y una bitácora de tres problemas."
+
+### Qué se aceptó
+
+La separación entre **hay red** (lo que reporta el sistema operativo) y
+**responde el servidor**. Son dos fallos distintos y se resuelven distinto:
+«sin internet» y «Apache está apagado» no se arreglan igual.
+
+También el criterio de reintentos: **solo en lecturas (GET), nunca en
+escrituras**. Reintentar un POST de pedido crearía pedidos duplicados.
+
+### Qué hubo que corregir
+
+El indicador de carga nunca llegaba a verse. La IA había puesto
+`cargando.set(true)` dentro de `cargar()`, después de dos `await`, así que la
+pantalla ya estaba pintada cuando el indicador se activaba. Se movió al inicio
+del `ngOnInit`.
+
+### Aprendizaje
+
+En una aplicación *zoneless*, el orden de los `await` decide lo que el usuario
+alcanza a ver. No basta con que el código sea correcto: tiene que ejecutarse en
+el momento correcto.
+
+---
+
+## Prompt 7 — Configuración de la IP del servidor desde la aplicación
+
+### Prompt utilizado
+
+> "Agrega un input en el login para definir la IP del servidor; que se guarde en
+> JSON y que todas las pestañas tomen esa IP; agrega una pantalla de orígenes de
+> datos y un mensaje dinámico bajo el password."
+
+### Qué hubo que corregir
+
+Las vistas seguían pidiendo a `localhost` aunque la IP estuviera guardada. La
+causa era que los repositorios cacheaban la URL en una propiedad
+(`private readonly url`), fijada al construirse el servicio, antes de que se
+leyera la configuración del disco.
+
+Se cambió por un *getter*, de modo que la URL se resuelve en cada petición.
+
+### Aprendizaje
+
+Un valor que depende de una lectura asíncrona no puede calcularse en el
+constructor. Este mismo error apareció cuatro veces en el proyecto, con
+distintas caras: la sesión, el panel de administración, la IP del servidor y la
+cola de pendientes.
+
+---
+
+## Prompt 8 — Consumo de API REST y sincronización
+
+### Prompt utilizado
+
+> "Documenta el consumo de API REST (GET/POST/PUT/PATCH/DELETE), los servicios
+> de Angular, el manejo de errores y la carga. Después, implementa la
+> sincronización entre lo local y lo remoto."
+
+### Qué se aceptó
+
+La cola de solicitudes pendientes: si no hay conexión al enviar un pedido, se
+guarda en el dispositivo y se manda sola cuando vuelve la señal. Y el criterio
+de qué se encola: **solo los fallos de red (código 0)**. Si el servidor
+respondió 422 por falta de existencias, reintentarlo dará el mismo error.
+
+### Qué hubo que corregir
+
+Un error introducido por la propia IA: el suscriptor comprobaba
+`if (!this.hayPendientes()) return;` **antes** de leer el disco. Si el usuario
+estaba en otra vista, la memoria estaba vacía aunque el dispositivo tuviera
+solicitudes guardadas, y la sincronización salía sin hacer nada.
+
+Dos líneas en orden inverso. Se detectó porque la prueba automatizada mostró que
+la cola no se vaciaba.
+
+### Aprendizaje
+
+El error más caro del proyecto fue de orden, no de lógica: cada línea era
+correcta por separado.
+
+---
+
+## Prompt 9 — Elemento multimedia: simulador con gráfica SVG
+
+### Prompt utilizado
+
+> "Agrega a la aplicación un elemento multimedia o una interacción gráfica
+> relacionada con su proyecto."
+
+### Qué se decidió
+
+En lugar de la cámara (que se había retirado del alcance), se construyó un
+simulador de generación y ahorro con una gráfica SVG de doce barras. El criterio
+fue que una fotografía del techo no cambia ninguna decisión dentro de la
+aplicación, mientras que la generación estimada **es** el argumento de venta de
+un sistema solar.
+
+La gráfica se dibujó a mano en SVG en lugar de usar una librería: una librería de
+graficado pesa más que toda la aplicación compilada.
+
+### Qué hubo que corregir
+
+Con las 28 comprobaciones automáticas ya en verde, el retorno de inversión salía
+en **1.4 años**, cuando un sistema solar residencial real se paga entre cuatro y
+siete. Se verificó el cálculo contra los precios reales de la base de datos y el
+modelo estaba bien: el carrito de prueba solo tenía paneles, sin estructura,
+inversor ni instalación, que son cerca de la mitad del costo.
+
+No era un error de programación, pero sí un dato que habría engañado al cliente.
+Se agregó un aviso que advierte qué piezas faltan. Con el sistema completo el
+retorno pasa a **4.1 años**.
+
+También se detectó, mirando una captura, que las etiquetas del eje salían tres
+veces más grandes de lo debido: el texto de un SVG escala junto con el dibujo.
+Ninguna comprobación lo vio porque todas medían el DOM, no el tamaño pintado.
+
+### Aprendizaje
+
+Una suite en verde no garantiza que el dato sea correcto, solo que el código hace
+lo que se le pidió. Hay que revisar si lo que se le pidió tiene sentido.
+
+---
+
+## Prompt 10 — Revisión final antes de la evaluación
+
+### Prompt utilizado
+
+> [Lista de requisitos de la evaluación final]
+
+### Qué se encontró al auditar
+
+Revisar el proyecto contra la lista de requisitos, en lugar de darlo por hecho,
+sacó a la luz cinco cosas:
+
+| Hallazgo | Estado |
+|---|---|
+| Dos pruebas unitarias fallaban | Corregido |
+| La app se llamaba «Photo Gallery Cap Ng» en el teléfono | Renombrada a SolarApp |
+| `api.service.ts` y `explore-container` eran código muerto | Eliminados |
+| Los endpoints de `usuarios.php` no estaban documentados | Documentados |
+| No existía el APK | Generado y verificado |
+
+De las dos pruebas que fallaban, **ninguna era un fallo de la aplicación**: una
+era contaminación de estado entre pruebas (la sesión guardada en `localStorage`
+sobrevivía de un test al siguiente) y la otra buscaba un selector que había
+quedado obsoleto cuando el mensaje de error se movió al panel de diagnóstico.
+
+### Aprendizaje
+
+Una prueba que falla no siempre señala un fallo del programa, pero **siempre
+señala algo**: en este caso, que la suite no se había actualizado al ritmo de la
+aplicación.
+
+---
+
 ## Resumen general
 
 | Aspecto | Detalle |
@@ -356,3 +545,31 @@ verificarlo en ejecución**. Los errores más serios no aparecían al leer el c�
 
 La conclusión es que la IA acelera bastante la escritura, pero la revisión y las
 pruebas siguen siendo responsabilidad del programador.
+
+### Lo que confirmó la Unidad II
+
+Esa conclusión se sostuvo durante todo el cuatrimestre, y se volvió más precisa.
+Los fallos que costaron más tiempo **no fueron de sintaxis ni de lógica suelta**,
+sino de tres tipos que solo se ven ejecutando:
+
+| Tipo de fallo | Ejemplo | Cómo se detectó |
+|---|---|---|
+| **De orden** | Comprobar si hay pendientes antes de leerlos del disco | Prueba automatizada |
+| **De momento** | Activar el indicador de carga después de dos `await` | Mirando la pantalla |
+| **De sentido** | Un retorno de inversión de 1.4 años, calculado correctamente | Dudando de una cifra que ninguna prueba marcaba |
+
+El tercero es el que ninguna herramienta detecta: el código hacía exactamente lo
+que se le pidió, y aun así el resultado habría engañado al cliente.
+
+### Método de trabajo adoptado
+
+A partir de la entrega de resiliencia se fijó una regla: **verificar en la
+aplicación real antes de dar algo por terminado**. En la práctica significó
+manejar la aplicación desde fuera con el protocolo de depuración de Chrome y
+revisar las capturas una por una.
+
+Eso tuvo un efecto secundario útil: en varias ocasiones **la prueba estaba mal y
+el programa bien**. Pasó con el selector obsoleto del mensaje de error, con la
+contaminación de estado entre pruebas, y con una expresión regular que perdía su
+barra invertida al atravesar las capas de comillas. En cada caso se comprobó la
+aplicación a mano antes de tocar código que ya funcionaba.

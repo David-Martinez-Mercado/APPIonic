@@ -156,6 +156,30 @@ Abre en `http://localhost:4200`.
 > (por ejemplo `192.168.1.195`). Se guarda en el dispositivo y todas las pestañas
 > consumen las APIs desde ahí. El detalle está en `docs/CONEXION-SERVIDOR.md`.
 
+### Aplicación para Android (APK)
+
+El APK ya compilado está en `dist-apk/SolarApp-debug.apk` (5.3 MB). Se instala
+directamente en un teléfono con «orígenes desconocidos» habilitado.
+
+Para regenerarlo:
+
+```bash
+npm run build          # compila el bundle web en www/
+npx cap sync android   # lo copia al proyecto Android
+cd android
+./gradlew assembleDebug
+```
+
+El APK queda en `android/app/build/outputs/apk/debug/app-debug.apk`.
+
+> **Importante para probar desde el teléfono:** `localhost` dentro del APK apunta
+> al propio teléfono, no a la computadora. Hay que escribir la IP del equipo donde
+> corre XAMPP en el panel de la pestaña *Acceso* (por ejemplo `192.168.1.195`), con
+> ambos dispositivos en la misma red.
+
+La aplicación pide solo tres permisos: **Internet**, **estado de red** y
+**vibración**. No pide cámara, ubicación ni almacenamiento.
+
 ### Cuentas de prueba
 
 La contraseña de las tres es `123456`.
@@ -169,6 +193,32 @@ La contraseña de las tres es `123456`.
 ---
 
 ## Endpoints de la API
+
+### `usuarios.php`
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| GET | `/usuarios.php` | Lista todos los usuarios |
+| GET | `/usuarios.php?id=1` | Un usuario por id |
+| POST | `/usuarios.php?accion=login` | Inicia sesión (acepta username o email) |
+| POST | `/usuarios.php` | Registra un usuario |
+| PUT | `/usuarios.php?id=1` | Reemplaza el registro completo |
+| PATCH | `/usuarios.php?id=1` | Actualiza solo los campos enviados |
+| DELETE | `/usuarios.php?id=1` | Baja lógica |
+
+Códigos que devuelve el login:
+
+| Código | Cuándo |
+|---|---|
+| 200 | Credenciales correctas |
+| 400 | Falta usuario o contraseña |
+| 401 | Usuario o contraseña incorrectos (mismo mensaje en ambos casos, para no revelar qué usuarios existen) |
+| 403 | La cuenta está desactivada |
+| 409 | Al registrar: el username o el email ya están tomados |
+| 422 | Email mal formado o contraseña de menos de 6 caracteres |
+
+> La contraseña **nunca viaja de vuelta**: se guarda con `password_hash()` y se
+> verifica con `password_verify()`. El campo se elimina de toda respuesta.
 
 ### `productos.php`
 
@@ -257,7 +307,7 @@ El detalle está en `docs/RESILIENCIA.md`.
 | `docs/Entrega9-Multimedia.docx` | Elemento multimedia: el simulador y su gráfica |
 | `docs/Entrega4-Resiliencia.docx` | Documento de la cuarta entrega |
 | `docs/MODELO-DATOS.md` | Modelo de datos y capa de acceso |
-| `docs/PROMPTS-IA.md` | Prompts usados durante el desarrollo |
+| `docs/PROMPTS-IA.md` | Bitácora de IA: los diez prompts del cuatrimestre, qué se aceptó y qué hubo que corregir |
 | `docs/capturas/` | Capturas de la aplicación en ejecución |
 
 ---
