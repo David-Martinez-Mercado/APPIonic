@@ -34,7 +34,17 @@ describe('Tab1Page', () => {
     fixture.nativeElement
       .querySelector(selector)!
       .dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    await fixture.whenStable();
+
+    // submit() encadena dos esperas antes de pintar: la llamada a la API
+    // y el guardado de la sesion en el dispositivo. Un solo whenStable()
+    // resolvia a veces entre una y otra, y la prueba leia la vista antes
+    // de que el componente marcara la sesion como activa: pasaba dos de
+    // cada tres ejecuciones. Se espera hasta que no quede trabajo
+    // pendiente en la cola de microtareas.
+    for (let i = 0; i < 5; i++) {
+      await fixture.whenStable();
+      await Promise.resolve();
+    }
     fixture.detectChanges();
   };
 

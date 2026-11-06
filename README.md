@@ -305,6 +305,7 @@ El detalle está en `docs/RESILIENCIA.md`.
 | `docs/Entrega7-ConsumoAPI.docx` | Consumo de API REST desde Ionic |
 | `docs/Entrega8-Sincronizacion.docx` | Sincronización de información local y remota |
 | `docs/Entrega9-Multimedia.docx` | Elemento multimedia: el simulador y su gráfica |
+| `docs/Examen-Unidad2-ConnectedIonicApp.docx` | **Documento consolidado de la Unidad II** (versión 2.0) |
 | `docs/Entrega4-Resiliencia.docx` | Documento de la cuarta entrega |
 | `docs/MODELO-DATOS.md` | Modelo de datos y capa de acceso |
 | `docs/PROMPTS-IA.md` | Bitácora de IA: los diez prompts del cuatrimestre, qué se aceptó y qué hubo que corregir |
